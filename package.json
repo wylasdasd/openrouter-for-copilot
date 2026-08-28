@@ -1,0 +1,444 @@
+{
+  "name": "openrouter-for-copilot",
+  "displayName": "%openrouter-for-copilot.displayName%",
+  "description": "Use 400+ OpenRouter models (Claude, GPT, Gemini, DeepSeek, Llama, free tiers) in the Copilot Chat model picker. Vision proxy, thinking mode, agent swarm — BYOK.",
+  "icon": "resources/icon.png",
+  "version": "3.11.18",
+  "packageManager": "pnpm@11.7.0",
+  "publisher": "abbalochdev",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/abbalochdev/openrouter-for-copilot.git"
+  },
+  "engines": {
+    "vscode": "^1.116.0",
+    "node": ">=24.11.0"
+  },
+  "categories": [
+    "AI",
+    "Chat",
+    "Programming Languages"
+  ],
+  "keywords": [
+    "openrouter",
+    "claude",
+    "gpt",
+    "gemini",
+    "deepseek",
+    "llama",
+    "glm",
+    "kimi",
+    "qwen",
+    "copilot",
+    "github copilot",
+    "copilot chat",
+    "vision",
+    "byok",
+    "language model",
+    "thinking",
+    "reasoning",
+    "ai",
+    "chat"
+  ],
+  "activationEvents": [
+    "onUri",
+    "onLanguageModelChatProvider:openrouter-for-copilot",
+    "onStartupFinished"
+  ],
+  "enabledApiProposals": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "languageModelChatProviders": [
+      {
+        "vendor": "openrouter-for-copilot",
+        "displayName": "OpenRouter"
+      }
+    ],
+    "chatParticipants": [
+      {
+        "id": "openrouter-for-copilot.pipeline",
+        "name": "swarm",
+        "fullName": "OpenRouter Agent Swarm",
+        "description": "Runs the agent swarm: parallel research agents, pre-implementation review, then implementation on the current model."
+      }
+    ],
+    "commands": [
+      {
+        "command": "openrouter-for-copilot.setApiKey",
+        "title": "%openrouter-for-copilot.command.setApiKey%"
+      },
+      {
+        "command": "openrouter-for-copilot.getApiKey",
+        "title": "%openrouter-for-copilot.command.getApiKey%"
+      },
+      {
+        "command": "openrouter-for-copilot.queryUsage",
+        "title": "%openrouter-for-copilot.command.queryUsage%"
+      },
+      {
+        "command": "openrouter-for-copilot.clearApiKey",
+        "title": "%openrouter-for-copilot.command.clearApiKey%"
+      },
+      {
+        "command": "openrouter-for-copilot.setVisionModel",
+        "title": "%openrouter-for-copilot.command.setVisionModel%"
+      },
+      {
+        "command": "openrouter-for-copilot.openSettings",
+        "title": "%openrouter-for-copilot.command.openSettings%"
+      },
+      {
+        "command": "openrouter-for-copilot.showLogs",
+        "title": "%openrouter-for-copilot.command.showLogs%"
+      },
+      {
+        "command": "openrouter-for-copilot.showDiagnostics",
+        "title": "%openrouter-for-copilot.command.showDiagnostics%"
+      },
+      {
+        "command": "openrouter-for-copilot.openRequestDumpsFolder",
+        "title": "%openrouter-for-copilot.command.openRequestDumpsFolder%"
+      },
+      {
+        "command": "openrouter-for-copilot.setPonytailMode",
+        "title": "%openrouter-for-copilot.command.setPonytailMode%"
+      },
+      {
+        "command": "openrouter-for-copilot.toggleCodeSimplifier",
+        "title": "%openrouter-for-copilot.command.toggleCodeSimplifier%"
+      },
+      {
+        "command": "openrouter-for-copilot.refreshModels",
+        "title": "%openrouter-for-copilot.command.refreshModels%"
+      }
+    ],
+    "walkthroughs": [
+      {
+        "id": "openrouterGettingStarted",
+        "title": "%openrouter-for-copilot.walkthrough.title%",
+        "description": "%openrouter-for-copilot.walkthrough.description%",
+        "steps": [
+          {
+            "id": "setApiKey",
+            "title": "%openrouter-for-copilot.walkthrough.setApiKey.title%",
+            "description": "%openrouter-for-copilot.walkthrough.setApiKey.description%",
+            "media": {
+              "markdown": "resources/walkthrough/set-api-key.md"
+            },
+            "completionEvents": [
+              "onCommand:openrouter-for-copilot.setApiKey"
+            ]
+          },
+          {
+            "id": "showModels",
+            "title": "%openrouter-for-copilot.walkthrough.showModels.title%",
+            "description": "%openrouter-for-copilot.walkthrough.showModels.description%",
+            "media": {
+              "markdown": "resources/walkthrough/show-models.md"
+            }
+          },
+          {
+            "id": "advancedSettings",
+            "title": "%openrouter-for-copilot.walkthrough.advancedSettings.title%",
+            "description": "%openrouter-for-copilot.walkthrough.advancedSettings.description%",
+            "media": {
+              "markdown": "resources/walkthrough/advanced-settings.md"
+            }
+          }
+        ]
+      }
+    ],
+    "configuration": {
+      "title": "%openrouter-for-copilot.config.title%",
+      "properties": {
+        "openrouter-for-copilot.agentRoles": {
+          "type": "object",
+          "default": {},
+          "markdownDescription": "%openrouter-for-copilot.config.agentRoles.description%",
+          "properties": {
+            "research": {
+              "type": "array",
+              "markdownDescription": "%openrouter-for-copilot.config.agentRoles.research.description%",
+              "items": {
+                "type": "object",
+                "required": [
+                  "vendor",
+                  "family"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "vendor": {
+                    "type": "string"
+                  },
+                  "family": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "review": {
+              "type": "array",
+              "markdownDescription": "%openrouter-for-copilot.config.agentRoles.review.description%",
+              "items": {
+                "type": "object",
+                "required": [
+                  "vendor",
+                  "family"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "vendor": {
+                    "type": "string"
+                  },
+                  "family": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  }
+                }
+              }
+            },
+            "implementFallback": {
+              "type": "array",
+              "markdownDescription": "%openrouter-for-copilot.config.agentRoles.implementFallback.description%",
+              "items": {
+                "type": "object",
+                "required": [
+                  "vendor",
+                  "family"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "vendor": {
+                    "type": "string"
+                  },
+                  "family": {
+                    "type": "string"
+                  },
+                  "id": {
+                    "type": "string"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "openrouter-for-copilot.baseUrl": {
+          "type": "string",
+          "default": "",
+          "markdownDescription": "%openrouter-for-copilot.config.baseUrl.description%"
+        },
+        "openrouter-for-copilot.maxTokens": {
+          "type": "number",
+          "default": 0,
+          "minimum": 0,
+          "description": "%openrouter-for-copilot.config.maxTokens.description%"
+        },
+        "openrouter-for-copilot.experimental.stabilizeToolList": {
+          "type": "boolean",
+          "default": false,
+          "markdownDescription": "%openrouter-for-copilot.config.experimental.stabilizeToolList.description%",
+          "tags": [
+            "experimental"
+          ]
+        },
+        "openrouter-for-copilot.modelIdOverrides": {
+          "type": "object",
+          "default": {
+            "copilot-utility": "deepseek/deepseek-chat",
+            "copilot-utility-small": "deepseek/deepseek-chat"
+          },
+          "markdownDescription": "%openrouter-for-copilot.config.modelIdOverrides.description%",
+          "additionalProperties": {
+            "type": "string"
+          },
+          "properties": {
+            "copilot-utility": {
+              "type": "string",
+              "description": "API model ID for Copilot Chat utility model (quick inline tasks)."
+            },
+            "copilot-utility-small": {
+              "type": "string",
+              "description": "API model ID for Copilot Chat small utility model."
+            }
+          }
+        },
+        "openrouter-for-copilot.customModels": {
+          "type": "array",
+          "default": [],
+          "markdownDescription": "%openrouter-for-copilot.config.customModels.description%",
+          "items": {
+            "anyOf": [
+              {
+                "type": "string",
+                "description": "%openrouter-for-copilot.config.customModels.string.description%"
+              },
+              {
+                "type": "object",
+                "required": [
+                  "id"
+                ],
+                "additionalProperties": false,
+                "properties": {
+                  "id": {
+                    "type": "string",
+                    "description": "%openrouter-for-copilot.config.customModels.id.description%"
+                  },
+                  "name": {
+                    "type": "string",
+                    "description": "%openrouter-for-copilot.config.customModels.name.description%"
+                  },
+                  "maxInputTokens": {
+                    "type": "number",
+                    "minimum": 1,
+                    "description": "%openrouter-for-copilot.config.customModels.maxInputTokens.description%"
+                  },
+                  "maxOutputTokens": {
+                    "type": "number",
+                    "minimum": 1,
+                    "description": "%openrouter-for-copilot.config.customModels.maxOutputTokens.description%"
+                  },
+                  "toolCalling": {
+                    "type": "boolean",
+                    "description": "%openrouter-for-copilot.config.customModels.toolCalling.description%"
+                  },
+                  "thinking": {
+                    "type": "boolean",
+                    "description": "%openrouter-for-copilot.config.customModels.thinking.description%"
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "openrouter-for-copilot.visionModel": {
+          "type": "string",
+          "default": "",
+          "tags": [
+            "advanced"
+          ],
+          "markdownDescription": "%openrouter-for-copilot.config.visionModel.description%"
+        },
+        "openrouter-for-copilot.visionPrompt": {
+          "type": "string",
+          "editPresentation": "multilineText",
+          "default": "Describe all image attachments in this message.\n\nIf there is one image, describe it directly.\nIf there are multiple images:\n1. Describe each image separately, preserving their order.\n2. Then provide a combined description explaining the overall context and relationships across the images.\n\nReturn one concise factual description suitable for inserting into a text-only chat prompt. Include visible text, objects, UI elements, people, and relevant context. Do not invent details.",
+          "markdownDescription": "%openrouter-for-copilot.config.visionPrompt.description%"
+        },
+        "openrouter-for-copilot.debugMode": {
+          "type": "string",
+          "default": "minimal",
+          "enum": [
+            "minimal",
+            "metadata",
+            "verbose"
+          ],
+          "enumItemLabels": [
+            "%openrouter-for-copilot.config.debugMode.minimal.label%",
+            "%openrouter-for-copilot.config.debugMode.metadata.label%",
+            "%openrouter-for-copilot.config.debugMode.verbose.label%"
+          ],
+          "markdownEnumDescriptions": [
+            "%openrouter-for-copilot.config.debugMode.minimal.description%",
+            "%openrouter-for-copilot.config.debugMode.metadata.description%",
+            "%openrouter-for-copilot.config.debugMode.verbose.description%"
+          ],
+          "markdownDescription": "%openrouter-for-copilot.config.debugMode.description%"
+        },
+        "openrouter-for-copilot.ponytailMode": {
+          "type": "string",
+          "default": "full",
+          "enum": [
+            "off",
+            "lite",
+            "full",
+            "ultra"
+          ],
+          "enumItemLabels": [
+            "%openrouter-for-copilot.config.ponytailMode.off.label%",
+            "%openrouter-for-copilot.config.ponytailMode.lite.label%",
+            "%openrouter-for-copilot.config.ponytailMode.full.label%",
+            "%openrouter-for-copilot.config.ponytailMode.ultra.label%"
+          ],
+          "markdownEnumDescriptions": [
+            "%openrouter-for-copilot.config.ponytailMode.off.description%",
+            "%openrouter-for-copilot.config.ponytailMode.lite.description%",
+            "%openrouter-for-copilot.config.ponytailMode.full.description%",
+            "%openrouter-for-copilot.config.ponytailMode.ultra.description%"
+          ],
+          "markdownDescription": "%openrouter-for-copilot.config.ponytailMode.description%"
+        },
+        "openrouter-for-copilot.codeSimplifier": {
+          "type": "boolean",
+          "default": true,
+          "markdownDescription": "%openrouter-for-copilot.config.codeSimplifier.description%"
+        },
+        "openrouter-for-copilot.stripThinkTags": {
+          "type": "string",
+          "default": "auto",
+          "enum": [
+            "auto",
+            "always",
+            "never"
+          ],
+          "enumItemLabels": [
+            "%openrouter-for-copilot.config.stripThinkTags.auto.label%",
+            "%openrouter-for-copilot.config.stripThinkTags.always.label%",
+            "%openrouter-for-copilot.config.stripThinkTags.never.label%"
+          ],
+          "markdownEnumDescriptions": [
+            "%openrouter-for-copilot.config.stripThinkTags.auto.description%",
+            "%openrouter-for-copilot.config.stripThinkTags.always.description%",
+            "%openrouter-for-copilot.config.stripThinkTags.never.description%"
+          ],
+          "markdownDescription": "%openrouter-for-copilot.config.stripThinkTags.description%"
+        },
+        "openrouter-for-copilot.rules": {
+          "type": "array",
+          "default": [],
+          "items": { "type": "string" },
+          "markdownDescription": "%openrouter-for-copilot.config.rules.description%"
+        },
+        "openrouter-for-copilot.allowExtraTools": {
+          "type": "boolean",
+          "default": false,
+          "tags": ["experimental"],
+          "markdownDescription": "%openrouter-for-copilot.config.allowExtraTools.description%"
+        },
+        "openrouter-for-copilot.auditFreeModelProbeMs": {
+          "type": "number",
+          "default": 6000,
+          "minimum": 500,
+          "maximum": 30000,
+          "markdownDescription": "%openrouter-for-copilot.config.auditFreeModelProbeMs.description%"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "compile": "vp pack",
+    "watch": "vp pack --watch",
+    "test": "vp test run",
+    "test:watch": "vp test",
+    "lint": "vp lint",
+    "format": "vp fmt --write src/ test/ vite.config.mts",
+    "format:check": "vp fmt --check src/ test/ vite.config.mts",
+    "validate:models": "tsx scripts/validate-models.mts",
+    "package": "vp run vsix",
+    "install:vsix": "vp run vsix && node scripts/install-vsix.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^25.6.0",
+    "@types/vscode": "^1.116.0",
+    "@vscode/vsce": "^3.9.2",
+    "ovsx": "1.0.2",
+    "typescript": "^6.0.3",
+    "vite-plus": "^0.2.1",
+    "vitest": "4.1.9"
+  }
+}
