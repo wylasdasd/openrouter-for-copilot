@@ -43,7 +43,7 @@ function stripWhitespace(text: string): string {
 
 // ---- OpenRouter attribution headers ----
 // https://openrouter.ai/docs/api/reference/overview
-const OPENROUTER_REFERER = 'https://github.com/abbalochdev/openrouter-for-copilot';
+const OPENROUTER_REFERER = 'https://github.com/wylasdasd/openrouter-for-copilot';
 const OPENROUTER_TITLE = 'OpenRouter for Copilot';
 
 function getOpenRouterHeaders(): Record<string, string> {

@@ -7,6 +7,7 @@ import {
 	getApiProtocol,
 	getBaseUrl,
 	getCustomModels,
+	getModelVisionMode,
 	listProviderModels,
 	migrateLegacySettings,
 } from '../src/config';
@@ -135,5 +136,16 @@ describe('configuration helpers', () => {
 		expect(getApiModelId('team-coder')).toBe('provider-team-coder');
 		expect(getApiModelId('empty')).toBe('empty');
 		expect(getApiModelId('unknown')).toBe('unknown');
+	});
+
+	it('routes auto vision mode from catalog imageInput', () => {
+		expect(getModelVisionMode('deepseek/deepseek-chat')).toBe('proxy');
+		expect(getModelVisionMode('openai/gpt-4o-mini')).toBe('native');
+	});
+
+	it('lets visionMode override every model', () => {
+		__setConfigurationValue('openrouter-for-copilot.visionMode', 'mcp');
+		expect(getModelVisionMode('deepseek/deepseek-chat')).toBe('mcp');
+		expect(getModelVisionMode('openai/gpt-4o-mini')).toBe('mcp');
 	});
 });

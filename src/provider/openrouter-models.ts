@@ -21,8 +21,9 @@ const FAILED_FETCH_RETRY_MS = 60 * 1000;
 let cachedModels: ModelDefinition[] | undefined;
 let cacheTimestamp = 0;
 
-const CAPS_THINKING = { toolCalling: GLM_TOOLS_LIMIT, imageInput: true, thinking: true } as const;
-const CAPS_STANDARD = { toolCalling: GLM_TOOLS_LIMIT, imageInput: true, thinking: false } as const;
+const CAPS_TEXT = { toolCalling: GLM_TOOLS_LIMIT, imageInput: false, thinking: false } as const;
+const CAPS_VISION = { toolCalling: GLM_TOOLS_LIMIT, imageInput: true, thinking: false } as const;
+const CAPS_VISION_THINKING = { toolCalling: GLM_TOOLS_LIMIT, imageInput: true, thinking: true } as const;
 
 /** Offline baseline until the first successful catalog fetch. */
 const FALLBACK_MODELS: readonly ModelDefinition[] = [
@@ -34,7 +35,7 @@ const FALLBACK_MODELS: readonly ModelDefinition[] = [
 		detail: 'Fast, economical coding model',
 		maxInputTokens: 64_000,
 		maxOutputTokens: 8_192,
-		capabilities: { ...CAPS_STANDARD },
+		capabilities: { ...CAPS_TEXT },
 		requiresThinkingParam: false,
 		pricing: { USD: { cacheHitInput: 0.14, cacheMissInput: 0.14, output: 0.28 } },
 		priceCategory: 'low',
@@ -47,7 +48,7 @@ const FALLBACK_MODELS: readonly ModelDefinition[] = [
 		detail: 'Balanced reasoning and coding',
 		maxInputTokens: 200_000,
 		maxOutputTokens: 8_192,
-		capabilities: { ...CAPS_THINKING },
+		capabilities: { ...CAPS_VISION_THINKING },
 		requiresThinkingParam: false,
 		supportsReasoningEffort: false,
 		pricing: { USD: { cacheHitInput: 3.0, cacheMissInput: 3.0, output: 15.0 } },
@@ -61,7 +62,7 @@ const FALLBACK_MODELS: readonly ModelDefinition[] = [
 		detail: 'Fast multimodal model with vision',
 		maxInputTokens: 1_000_000,
 		maxOutputTokens: 8_192,
-		capabilities: { ...CAPS_STANDARD },
+		capabilities: { ...CAPS_VISION },
 		requiresThinkingParam: false,
 		pricing: { USD: { cacheHitInput: 0.1, cacheMissInput: 0.1, output: 0.4 } },
 		priceCategory: 'low',
@@ -74,7 +75,7 @@ const FALLBACK_MODELS: readonly ModelDefinition[] = [
 		detail: 'Compact general-purpose model',
 		maxInputTokens: 128_000,
 		maxOutputTokens: 16_384,
-		capabilities: { ...CAPS_STANDARD },
+		capabilities: { ...CAPS_VISION },
 		requiresThinkingParam: false,
 		pricing: { USD: { cacheHitInput: 0.15, cacheMissInput: 0.15, output: 0.6 } },
 		priceCategory: 'low',

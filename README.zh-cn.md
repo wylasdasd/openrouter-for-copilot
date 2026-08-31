@@ -3,7 +3,7 @@
 <p align="center">
   <img src="https://img.shields.io/badge/OpenRouter-BYOK-007ACC?logo=visualstudiocode&logoColor=white&style=for-the-badge" alt="OpenRouter BYOK" />
   <br/>
-  <img src="https://img.shields.io/github/v/release/abbalochdev/openrouter-for-copilot?style=for-the-badge&label=版本" alt="版本" />
+  <img src="https://img.shields.io/github/v/release/wylasdasd/openrouter-for-copilot?style=for-the-badge&label=版本" alt="版本" />
 </p>
 
 <p align="center">
@@ -23,7 +23,7 @@
 
 ## 安装
 
-**Marketplace / Open VSX：** 搜索 `abbalochdev.openrouter-for-copilot`，或从 [Releases](https://github.com/abbalochdev/openrouter-for-copilot/releases) 页面安装。
+**Marketplace / Open VSX：** 搜索 `wylasdasd.openrouter-for-copilot`，或从 [Releases](https://github.com/wylasdasd/openrouter-for-copilot/releases) 页面安装。
 
 **从源码：**
 
@@ -130,31 +130,86 @@ pnpm compile
 
 图片路由对齐 [GLM for Copilot](https://github.com/umbrella22/GLM-for-copilot)。在 Copilot Chat 里附加截图或照片（回形针 / 拖放）后发送即可，没有单独的侧边栏。
 
-**默认（`visionMode`: `auto`）**
+视觉相关配置分三处，职责不同：
 
-| 当前模型 | 实际行为 |
-| -------- | -------- |
-| 目录标明支持图片 | **native** — 缩放（VS Code `_chat.resizeImage`）后按 `image_url` 发送字节，总预算 2.5 MiB |
-| 纯文本（或未设 `imageInput` 的自定义 slug） | **proxy** — 先由视觉模型描述（OCR 优先，包成 untrusted content），再把文字交给聊天模型 |
+| 入口 | 命令 / 键 | 控制什么 |
+| ---- | --------- | -------- |
+| 设置 UI | `openrouter-for-copilot.visionMode` | 图片如何到达**聊天模型**（`auto` / `native` / `proxy` / `mcp`） |
+| 独立面板 | **OpenRouter: 配置视觉代理** | **proxy** 时用哪台模型去**描述**图片 |
+| `settings.json` | `visionPrompt`、`imageHandlingPrompt`、`imageStoredPrompt` | 实际 prompt 文本（视觉代理面板里没有这项） |
 
-**切换模式** — 没有单独的 Webview。运行 **OpenRouter: 打开设置**，搜索 `visionMode`，选择 `auto` / `native` / `proxy` / `mcp`。该值对选择器里所有 OpenRouter 模型生效。
+#### `visionMode` — 图片路由
 
-**配置视觉代理**（`auto`/`proxy` 会用到；MCP 缺识图工具时也会回退到它）：
+对选择器里所有 OpenRouter 模型生效。运行 **OpenRouter: 打开设置**，搜索 `visionMode`。
 
-1. 运行 **OpenRouter: 配置视觉代理**。
-2. 一般保持 **自动**：先试 OpenRouter `google/gemini-2.0-flash-001`，失败再回退 VS Code 视觉模型。
-3. 也可改选 VS Code 语言模型 / 自定义 API 端点，然后 **保存**。**测试** 会发一张样例图，用来确认描述模型可用。
+| 取值 | 何时用 | 实际行为 |
+| ---- | ------ | -------- |
+| `auto`（默认） | 一般不用改 | 目录标明聊天模型支持图片 → **native**。纯文本（或未设 `imageInput` 的自定义 slug）→ **proxy**。 |
+| `native` | 强制把像素发给当前聊天模型 | 缩放（VS Code `_chat.resizeImage`）后按 `image_url` 发送字节，总预算 2.5 MiB。模型不识图就会失败，**不会**回退到 proxy。 |
+| `proxy` | 聊天模型是纯文本，或你希望始终先转成文字 | 先由视觉模型描述图片（OCR 优先，包成 untrusted content），聊天模型只看到这段文字。 |
+| `mcp` | 你有能读**本地文件路径**的 MCP 识图工具 | 图片存到扩展全局存储；聊天模型收到的是路径提示，不是像素。 |
 
-**MCP 模式**（可选）。本扩展不内置识图 MCP，需要你自己启用「入参含本地图片路径」的工具，或把精确运行时 ID 写进 `mcp.imageCapableTools`。
+#### 视觉代理面板 — 描述用哪台模型
+
+`auto`/`proxy` 会用到；`mcp` 没有识图工具时也会回退到它。命令面板 → **OpenRouter: 配置视觉代理**。这个面板**没有** prompt 输入框。
+
+| 来源 | 作用 |
+| ---- | ---- |
+| **自动** | 先试 OpenRouter `google/gemini-2.0-flash-001`，失败再回退 VS Code 视觉模型。 |
+| **VS Code 模型** | 选择 VS Code 里已注册的识图模型。写入 `openrouter-for-copilot.visionModel`（`vendor/id`）。该键带 `advanced` 标签，设置页默认隐藏，需搜索 `visionModel` 或打开 **显示高级设置**。不要手改这串，用面板选。 |
+| **API 端点** | 自建 OpenAI Chat Completions / Responses 或 Anthropic Messages 地址。 |
+
+API 端点各字段：
+
+| 字段 | 含义 |
+| ---- | ---- |
+| 端点 URL | 完整的 chat/completions、`/responses` 或 `/messages` 地址 |
+| 端点类型 | 能从 URL 推断时会自动填；否则手动选 Chat Completions / Responses / Messages |
+| API Key | 存在 VS Code SecretStorage，不写进 `settings.json` |
+| 模型 ID | 端点要求的 slug（如 `gpt-4o-mini`） |
+| 自定义 headers JSON | 额外 HTTP 头，例如 `{"X-Custom-Header": "value"}` |
+| 额外请求体 JSON | 合并进请求体（`temperature`、`max_tokens` 等）。**不是**识图 prompt。不能覆盖 `model`、`messages`、`input`、`stream`。 |
+
+先点 **测试**（会发一张样例图），再 **保存**。
+
+#### Prompt 设置 — 不在面板里
+
+默认值内置。在 **首选项: 打开用户设置 (JSON)** 里覆盖。设置 UI 只显示单行，完整内容请点 **在 settings.json 中编辑**。`visionPrompt` 为空或只含空白时，回退到内置 OCR 优先默认值。
+
+| 设置项 | 何时生效 | 作用 |
+| ------ | -------- | ---- |
+| `openrouter-for-copilot.visionPrompt` | `auto` / `proxy`（以及 MCP 回退到 proxy 时） | 发给**视觉描述模型**的指令（先抽文字，再写视觉上下文）。 |
+| `openrouter-for-copilot.imageHandlingPrompt` | `mcp` | 每个 MCP 回合（含纯文本回合）都会注入的系统指令，用来稳住 prompt cache 前缀。 |
+| `openrouter-for-copilot.imageStoredPrompt` | `mcp` | 图片存盘后插入的那一行。`{0}` = 标签，`{1}` = 文件路径。 |
+
+```json
+{
+  "openrouter-for-copilot.visionMode": "auto",
+  "openrouter-for-copilot.visionPrompt": "Extract visible text first, then describe the visual context. …",
+  "openrouter-for-copilot.imageHandlingPrompt": "[Image Handling]\n…",
+  "openrouter-for-copilot.imageStoredPrompt": "[{0} attached at local file: {1}]\n…"
+}
+```
+
+#### MCP 模式的其余配置
+
+本扩展不内置识图 MCP。需要你自己启用「入参含本地图片路径」的工具，或填写精确运行时 ID。
 
 1. 在 Copilot Chat 工具列表里启用识图 MCP 工具。
-2. 将 `openrouter-for-copilot.visionMode` 设为 `mcp`。
-3. 附加图片。文件存到扩展全局存储；模型收到的是本地路径提示，不是像素。
+2. 将 `visionMode` 设为 `mcp`。
+3. 附加图片。模型看到的是本地路径提示，不是像素。
 4. 用 **OpenRouter: 清理已存储的图片** 删除，或把 `mcp.imageCleanupMode` 设为 `ttl-7d`。
 
-MCP 已开但没有识图工具时：若已配置视觉代理则回退 proxy，否则报错。native 失败**不会**回退到 proxy。
+| 设置项 | 默认值 | 作用 |
+| ------ | ------ | ---- |
+| `mcp.imageCapableTools` | `[]` | 额外视为识图工具的 Copilot 运行时 ID。带必填本地路径入参的官方工具也会被自动识别。 |
+| `mcp.imageCleanupMode` | `manual` | `manual`：一直保留直到你手动清理。`ttl-7d`：激活时删除「上次引用」超过 7 天的文件。 |
 
-**自定义模型** 默认走 proxy（`imageInput: false`）。识图 slug 需要显式打开 native：
+MCP 已开但没有识图工具时：若已配置视觉代理则回退 proxy，否则报错。
+
+#### 自定义模型与 native 识图
+
+自定义 slug 默认走 proxy（`imageInput: false`）。识图 slug 需要显式打开 native：
 
 ```json
 {
@@ -209,7 +264,7 @@ OpenRouter 目录中支持 `reasoning_effort` 的模型，可在 Copilot 模型�
 | **OpenRouter: 打开 API Key 页面** | 打开 openrouter.ai/keys |
 | **OpenRouter: 查询用量** | 打开 openrouter.ai/activity |
 | **OpenRouter: 刷新模型列表** | 重新拉取目录 |
-| **OpenRouter: 配置视觉代理** | 视觉代理来源（自动 / VS Code LM / 自定义端点） |
+| **OpenRouter: 配置视觉代理** | 描述模型来源（自动 / VS Code LM / 自定义端点）。Prompt 是独立设置，见[发送图片](#发送图片) |
 | **OpenRouter: 清理已存储的图片** | 删除本地 MCP 视觉图片 |
 | **OpenRouter: 设置 Ponytail 模式** | 编码纪律强度 |
 | **OpenRouter: 切换代码精简器** | 开关 post-edit 精简 |
@@ -227,15 +282,15 @@ OpenRouter 目录中支持 `reasoning_effort` 的模型，可在 Copilot 模型�
 | `baseUrl` | 留空 | 留空 → `https://openrouter.ai/api/v1` |
 | `maxTokens` | `0` | 最大输出 token（`0` = API 默认） |
 | `modelIdOverrides` | utility → `deepseek/deepseek-chat` | 映射 picker ID 到 API slug |
-| `customModels` | `[]` | 额外 slug 或对象（`id`、`thinking`、`imageInput` 等） |
+| `customModels` | `[]` | 额外 slug 或对象（`id`、`thinking`、`imageInput` 等）。`imageInput: true` 才走 native |
 | `agentRoles` | `{}` | Swarm：`research`、`review`、`implementFallback` |
-| `visionModel` | 留空 | VS Code 视觉回退（`vendor/id`） |
-| `visionPrompt` | 内置 OCR 优先 prompt | 图片描述 prompt（proxy 模式） |
-| `visionMode` | `auto` | 图片路由：`auto` / `native` / `proxy` / `mcp`（见[发送图片](#发送图片)） |
-| `imageHandlingPrompt` | 内置 | `mcp` 视觉模式的系统指令 |
-| `imageStoredPrompt` | 内置 | `mcp` 每张图的本地路径提示 |
+| `visionMode` | `auto` | 图片路由：`auto` / `native` / `proxy` / `mcp` — [发送图片](#发送图片) |
+| `visionModel` | 留空 | VS Code 视觉回退（`vendor/id`）。高级设置，默认隐藏；用 **配置视觉代理** 面板改 |
+| `visionPrompt` | 内置 OCR 优先 prompt | 发给**描述模型**的指令（proxy）。在 `settings.json` 改，不在视觉代理面板 |
+| `imageHandlingPrompt` | 内置 | MCP 系统指令（每个 MCP 回合）。在 `settings.json` 编辑 |
+| `imageStoredPrompt` | 内置 | MCP 每张图的路径提示（`{0}` 标签，`{1}` 路径）。在 `settings.json` 编辑 |
 | `mcp.imageCleanupMode` | `manual` | 已存 MCP 图片：`manual` / `ttl-7d` |
-| `mcp.imageCapableTools` | `[]` | 额外视为识图工具的 MCP ID |
+| `mcp.imageCapableTools` | `[]` | 额外视为识图工具的 Copilot 运行时 ID |
 | `ponytailMode` | `full` | `off` / `lite` / `full` / `ultra` |
 | `codeSimplifier` | `true` | 代码精简器 |
 | `stripThinkTags` | `auto` | 剥离泄漏推理标签 |
@@ -265,7 +320,7 @@ OpenRouter 目录中支持 `reasoning_effort` 的模型，可在 Copilot 模型�
 ```json
 {
   "extensions.supportAgentsWindow": {
-    "abbalochdev.openrouter-for-copilot": true
+    "wylasdasd.openrouter-for-copilot": true
   }
 }
 ```
@@ -295,6 +350,10 @@ MCP 需要工具调用 **并且** 有识图工具。两者都没有、也没配�
 ### 调试日志
 
 将 `debugMode` 设为 `metadata`，运行 **OpenRouter: 显示日志**。需要完整请求体（含 prompt 原文）时设为 `verbose`，再运行 **OpenRouter: 打开请求 Dump 目录**。
+
+## 代码结构
+
+`src/` 目录、启动顺序、聊天请求路径见 [docs/code-structure.zh-cn.md](docs/code-structure.zh-cn.md)。重试、目录缓存、视觉内部实现见 [docs/architecture-optimizations.md](docs/architecture-optimizations.md)。
 
 ## 许可证
 

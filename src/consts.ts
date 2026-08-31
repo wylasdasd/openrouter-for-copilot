@@ -63,7 +63,7 @@ export const WELCOME_SHOWN_KEY = 'openrouter-for-copilot.welcomeShown';
 // ---- Walkthrough ----
 
 /** Walkthrough contribution ID. */
-export const WALKTHROUGH_ID = 'abbalochdev.openrouter-for-copilot#openrouterGettingStarted';
+export const WALKTHROUGH_ID = 'wylasdasd.openrouter-for-copilot#openrouterGettingStarted';
 
 // ---- Model registry ----
 //

@@ -22,7 +22,7 @@ import { detectImageMimeType, resizeImage } from './shared/resize';
  * [FORK] Cleanup strategy (PR review feedback):
  *   - Mode is user-controlled via `openrouter-for-copilot.mcp.imageCleanupMode`:
  *     'manual' (default) — never auto-delete; user runs the
- *     "GLM: Clean Up Stored Images" command.
+ *     "OpenRouter: Clean Up Stored Images" command.
  *     'ttl-7d' — on activation, delete files whose mtime is older than 7 days.
  *   - Reusing a file refreshes its mtime via `utimes`, so actively-referenced
  *     images survive TTL cleanup. This is an advantage over VS Code's own
@@ -91,7 +91,7 @@ export async function storeImage(
 	token?: vscode.CancellationToken,
 ): Promise<string | undefined> {
 	if (!storageRoot) {
-		logger.warn('Image store not initialized; falling back to base64');
+		logger.warn('Image store not initialized; leaving an unavailable marker');
 		return undefined;
 	}
 

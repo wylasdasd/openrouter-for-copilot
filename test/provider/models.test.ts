@@ -97,6 +97,19 @@ describe('OpenRouter catalog pipeline', () => {
 		}
 	});
 
+	it('marks only multimodal fallback models as image-capable', () => {
+		expect(MODELS.find((m) => m.id === 'deepseek/deepseek-chat')?.capabilities.imageInput).toBe(
+			false,
+		);
+		expect(MODELS.find((m) => m.id === 'google/gemini-2.0-flash-001')?.capabilities.imageInput).toBe(
+			true,
+		);
+		expect(MODELS.find((m) => m.id === 'openai/gpt-4o-mini')?.capabilities.imageInput).toBe(true);
+		expect(MODELS.find((m) => m.id === 'anthropic/claude-3.5-sonnet')?.capabilities.imageInput).toBe(
+			true,
+		);
+	});
+
 	it('falls back to the static list when the catalog is unreachable', async () => {
 		const realFetch = globalThis.fetch;
 		globalThis.fetch = (async () => {
@@ -243,7 +256,7 @@ describe('model metadata helpers', () => {
 		expect(info.statusIcon).toBeUndefined();
 		expect(info.capabilities).toEqual({
 			toolCalling: MODELS[0].capabilities.toolCalling,
-			imageInput: true,
+			imageInput: MODELS[0].capabilities.imageInput,
 		});
 		expect(info.configurationSchema).toBeUndefined();
 		expect(info.inputCost).toBe(0.14);

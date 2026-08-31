@@ -20,7 +20,7 @@ If models appear in editor chat but not in the agent / background agent window:
 ```json
 {
   "extensions.supportAgentsWindow": {
-    "abbalochdev.openrouter-for-copilot": true
+    "wylasdasd.openrouter-for-copilot": true
   }
 }
 ```

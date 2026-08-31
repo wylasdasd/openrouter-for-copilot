@@ -1,6 +1,8 @@
 # Architecture — OpenRouter for Copilot
 
 > Last updated: 2026-08-31 · vision native / proxy / mcp
+>
+> Folder map and request path: [code-structure.md](code-structure.md).
 
 VS Code extension that registers **`openrouter-for-copilot`** as a Copilot Chat language-model provider. Chat traffic uses the **OpenAI-compatible** OpenRouter API (`POST /api/v1/chat/completions`). Model metadata comes from **`GET /api/v1/models`**.
 
@@ -132,4 +134,4 @@ code --install-extension "dist\openrouter-for-copilot-3.11.14.vsix"
 
 Or use `pnpm install:vsix`, which sets that automatically.
 
-Extension ID: **`abbalochdev.openrouter-for-copilot`**.
+Extension ID: **`wylasdasd.openrouter-for-copilot`**.

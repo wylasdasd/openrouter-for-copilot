@@ -79,7 +79,7 @@ First activation copies the first non-empty legacy secret into `openrouter-for-c
 ## Lineage
 
 1. [GLM for VS Code Copilot](https://github.com/umbrella22/glm-for-copilot)
-2. [OpenCode for Copilot](https://github.com/abbalochdev/opencode-for-copilot)
+2. OpenCode for Copilot
 3. **OpenRouter for Copilot** (this repo)
 
-Pre-3.11.14 changelog: [opencode-for-copilot/CHANGELOG.md](https://github.com/abbalochdev/opencode-for-copilot/blob/main/CHANGELOG.md)
+Pre-3.11.14 changelog: that project's `CHANGELOG.md`.

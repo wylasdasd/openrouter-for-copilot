@@ -47,8 +47,11 @@ export async function resizeImage(
 			mimeType: detectImageMimeType(resized) ?? mimeType,
 			resizeFailed: false,
 		};
-	} catch {
+	} catch (error) {
 		throwIfCancellationRequested(token);
+		if (error instanceof vscode.CancellationError) {
+			throw error;
+		}
 		return { data, mimeType, resizeFailed: true };
 	}
 }

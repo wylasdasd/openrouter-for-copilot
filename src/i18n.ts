@@ -173,7 +173,7 @@ const zh: Translations = {
 	'notice.visionProxyMissing': '⚠️ 视觉代理不可用，GLM 无法看到图片。[配置视觉代理]({0})',
 	'notice.visionProxyFailure': '**⚠️ {0}**\\\n\\\n**{1} · {2}**',
 	'notice.toolDrift':
-		'⚠️ 工具列表不稳定，缓存命中率可能下降。[了解更多](https://github.com/abbalochdev/openrouter-for-copilot/blob/main/docs/notices/tool-drift.zh.md)',
+		'⚠️ 工具列表不稳定，缓存命中率可能下降。[了解更多](https://github.com/wylasdasd/openrouter-for-copilot/blob/main/docs/notices/tool-drift.zh.md)',
 
 	// Usage
 	'usage.openrouterActivity': '正在打开 OpenRouter 用量页面...',
@@ -450,7 +450,7 @@ const en: Translations = {
 		'⚠️ Vision Proxy is unavailable. GLM cannot see images. [Configure Vision Proxy]({0})',
 	'notice.visionProxyFailure': '**⚠️ {0}**\\\n\\\n**{1} · {2}**',
 	'notice.toolDrift':
-		'⚠️ Tool list is unstable; cache hit rate may drop. [Learn more](https://github.com/abbalochdev/openrouter-for-copilot/blob/main/docs/notices/tool-drift.en.md)',
+		'⚠️ Tool list is unstable; cache hit rate may drop. [Learn more](https://github.com/wylasdasd/openrouter-for-copilot/blob/main/docs/notices/tool-drift.en.md)',
 
 	// Usage
 	'usage.openrouterActivity': 'Opening OpenRouter activity page...',

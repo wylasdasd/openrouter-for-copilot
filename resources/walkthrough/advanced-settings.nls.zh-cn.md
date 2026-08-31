@@ -20,7 +20,7 @@
 ```json
 {
   "extensions.supportAgentsWindow": {
-    "abbalochdev.openrouter-for-copilot": true
+    "wylasdasd.openrouter-for-copilot": true
   }
 }
 ```

@@ -4,7 +4,7 @@
   <!-- marketplace-readme:remove-start -->
   <img src="https://img.shields.io/badge/OpenRouter-BYOK-007ACC?logo=visualstudiocode&logoColor=white&style=for-the-badge" alt="OpenRouter BYOK" />
   <br/>
-  <img src="https://img.shields.io/github/v/release/abbalochdev/openrouter-for-copilot?style=for-the-badge&label=Version" alt="Version" />
+  <img src="https://img.shields.io/github/v/release/wylasdasd/openrouter-for-copilot?style=for-the-badge&label=Version" alt="Version" />
   <img src="https://img.shields.io/badge/models-400+-blue?style=for-the-badge" alt="400+ models" />
   <img src="https://img.shields.io/badge/dependencies-zero-success?style=for-the-badge" alt="Zero runtime dependencies" />
   <img src="https://img.shields.io/badge/license-MIT-green?style=for-the-badge" alt="MIT License" />
@@ -27,7 +27,7 @@ Use **400+ OpenRouter models** in GitHub Copilot Chat's model picker — BYOK, a
 
 ## Installation
 
-**Marketplace / Open VSX:** search for `abbalochdev.openrouter-for-copilot`, or install from the [Releases](https://github.com/abbalochdev/openrouter-for-copilot/releases) page.
+**Marketplace / Open VSX:** search for `wylasdasd.openrouter-for-copilot`, or install from the [Releases](https://github.com/wylasdasd/openrouter-for-copilot/releases) page.
 
 **From source:**
 
@@ -134,31 +134,86 @@ Select any OpenRouter model that supports tool calling, switch Copilot Chat to *
 
 Routing follows [GLM for Copilot](https://github.com/umbrella22/GLM-for-copilot). Attach a screenshot or photo in Copilot Chat (paperclip / drag-and-drop) and send — no extra sidebar.
 
-**Default (`visionMode`: `auto`)**
+Two places to configure vision (they do different jobs):
 
-| Selected model | What happens |
-| -------------- | ------------ |
-| Catalog says it accepts images | **native** — resize (VS Code `_chat.resizeImage`) and send bytes as `image_url` under a 2.5 MiB budget |
-| Text-only (or custom slug without `imageInput`) | **proxy** — a vision model describes the image first (OCR-first, wrapped as untrusted content), then the chat model sees that text |
+| Where | Command / key | What it controls |
+| ----- | ------------- | ---------------- |
+| Settings UI | `openrouter-for-copilot.visionMode` | How images reach the **chat** model (`auto` / `native` / `proxy` / `mcp`) |
+| Dedicated panel | **OpenRouter: Configure Vision Proxy** | Which model **describes** the image when proxy is used |
+| `settings.json` | `visionPrompt`, `imageHandlingPrompt`, `imageStoredPrompt` | The actual prompt text (not shown on the proxy panel) |
 
-**Change the mode** — there is no dedicated webview for this. Run **OpenRouter: Open Settings**, search `visionMode`, pick `auto` / `native` / `proxy` / `mcp`. The value applies to every OpenRouter model in the picker.
+#### `visionMode` — image routing
 
-**Configure the vision proxy** (used by `auto`/`proxy`, and as MCP fallback):
+Applies to every OpenRouter model in the picker. **OpenRouter: Open Settings**, search `visionMode`.
 
-1. Run **OpenRouter: Configure Vision Proxy**.
-2. Leave **Automatic** unless you need another source. Automatic tries OpenRouter `google/gemini-2.0-flash-001`, then a VS Code vision model.
-3. Or choose a VS Code language model / a custom API endpoint, then **Save**. **Test** sends a sample image so you can confirm the describer works.
+| Value | When to use | What happens |
+| ----- | ----------- | ------------ |
+| `auto` (default) | Leave this unless you have a reason | Catalog says the chat model accepts images → **native**. Text-only (or custom slug without `imageInput`) → **proxy**. |
+| `native` | Force pixels to every selected model | Resize (VS Code `_chat.resizeImage`) and send bytes as `image_url` under a 2.5 MiB budget. If the model cannot see images, this fails — it does **not** fall back to proxy. |
+| `proxy` | Chat model is text-only, or you always want a text description | A vision model describes the image (OCR-first, wrapped as untrusted content). The chat model only sees that text. |
+| `mcp` | You have an MCP tool that reads a **local file path** | Images are saved under the extension's global storage. The chat model gets a path prompt, not pixels. |
 
-**MCP mode** (optional). This extension does not ship an image MCP server — enable one yourself (a tool whose schema takes a local image path), or list exact runtime tool IDs in `mcp.imageCapableTools`.
+#### Vision Proxy panel — describer model
 
-1. Confirm an image-capable MCP tool is enabled in Copilot Chat tools.
-2. Set `openrouter-for-copilot.visionMode` to `mcp`.
-3. Attach images. They are stored under the extension's global storage; the model gets a local-path prompt, not pixels.
+Used by `auto`/`proxy`, and as fallback when `mcp` has no image tool. Command Palette → **OpenRouter: Configure Vision Proxy**. This panel does **not** contain the prompt.
+
+| Source | What it does |
+| ------ | ------------ |
+| **Automatic** | Try OpenRouter `google/gemini-2.0-flash-001`, then a VS Code vision model. |
+| **VS Code model** | Pick a vision-capable model already registered in VS Code. Stored as `openrouter-for-copilot.visionModel` (`vendor/id`). That key is tagged `advanced`, so the Settings UI hides it unless you search `visionModel` or enable **Show advanced settings**. Prefer this panel over editing the string by hand. |
+| **API endpoint** | Your own OpenAI Chat Completions / Responses or Anthropic Messages URL. |
+
+API endpoint fields:
+
+| Field | Meaning |
+| ----- | ------- |
+| Endpoint URL | Full chat/completions, `/responses`, or `/messages` URL |
+| Endpoint type | Auto-detected from the URL when possible; otherwise pick Chat Completions / Responses / Messages |
+| API key | Stored in VS Code SecretStorage, not `settings.json` |
+| Model ID | Model slug the endpoint expects (e.g. `gpt-4o-mini`) |
+| Custom headers JSON | Extra HTTP headers, e.g. `{"X-Custom-Header": "value"}` |
+| Additional request body JSON | Merged into the body (`temperature`, `max_tokens`, …). **Not** the vision prompt. Cannot override `model`, `messages`, `input`, or `stream`. |
+
+Use **Test** (sends a sample image) then **Save**.
+
+#### Prompt settings — not on the panel
+
+Defaults are built in. Override in **Preferences: Open User Settings (JSON)**. The Settings UI shows a one-line box; use **Edit in settings.json** for the full text. Empty / whitespace `visionPrompt` falls back to the built-in OCR-first default.
+
+| Setting | Used when | Role |
+| ------- | --------- | ---- |
+| `openrouter-for-copilot.visionPrompt` | `auto` / `proxy` (and MCP → proxy fallback) | Instruction sent **to the vision describer** (extract text, then visual context). |
+| `openrouter-for-copilot.imageHandlingPrompt` | `mcp` | System instruction on **every** MCP-mode turn (including text-only) so the prompt-cache prefix stays stable. |
+| `openrouter-for-copilot.imageStoredPrompt` | `mcp` | Per-image line after a file is stored. `{0}` = label, `{1}` = file path. |
+
+```json
+{
+  "openrouter-for-copilot.visionMode": "auto",
+  "openrouter-for-copilot.visionPrompt": "Extract visible text first, then describe the visual context. …",
+  "openrouter-for-copilot.imageHandlingPrompt": "[Image Handling]\n…",
+  "openrouter-for-copilot.imageStoredPrompt": "[{0} attached at local file: {1}]\n…"
+}
+```
+
+#### MCP mode extras
+
+This extension does not ship an image MCP server. Enable a tool whose schema takes a local image path, or list exact runtime IDs.
+
+1. Enable the image MCP tool in Copilot Chat tools.
+2. Set `visionMode` to `mcp`.
+3. Attach images. The model sees a local-path prompt, not pixels.
 4. Delete files with **OpenRouter: Clean Up Stored Images**, or set `mcp.imageCleanupMode` to `ttl-7d`.
 
-If MCP is on but no image tool is available, the request falls back to the vision proxy when one is configured; otherwise it errors. Native failures do **not** fall back to proxy.
+| Setting | Default | Role |
+| ------- | ------- | ---- |
+| `mcp.imageCapableTools` | `[]` | Extra Copilot runtime tool IDs treated as image readers. Official tools are also auto-detected from a required local-path input. |
+| `mcp.imageCleanupMode` | `manual` | `manual`: keep until you run Clean Up. `ttl-7d`: delete files last referenced more than 7 days ago (on activation). |
 
-**Custom models** default to proxy (`imageInput: false`). Opt a vision slug into native:
+If MCP is on but no image tool is available, the request falls back to the vision proxy when one is configured; otherwise it errors.
+
+#### Custom models and native vision
+
+Custom slugs default to proxy (`imageInput: false`). Opt a vision slug into native:
 
 ```json
 {
@@ -213,7 +268,7 @@ Toggle via **OpenRouter: Set Ponytail Mode** and **OpenRouter: Toggle Code Simpl
 | **OpenRouter: Open API Key Page** | Open openrouter.ai/keys |
 | **OpenRouter: Query Usage** | Open openrouter.ai/activity |
 | **OpenRouter: Refresh Model List** | Re-fetch catalog from OpenRouter |
-| **OpenRouter: Configure Vision Proxy** | Vision proxy source (auto / VS Code LM / custom endpoint) |
+| **OpenRouter: Configure Vision Proxy** | Describer model source (auto / VS Code LM / custom endpoint). Prompts are separate settings — see [Attach images](#attach-images) |
 | **OpenRouter: Clean Up Stored Images** | Delete locally stored MCP vision images |
 | **OpenRouter: Set Ponytail Mode** | Coding-discipline intensity |
 | **OpenRouter: Toggle Code Simplifier** | Post-edit simplification on/off |
@@ -231,15 +286,15 @@ All keys live under **`openrouter-for-copilot.*`**. Open via **OpenRouter: Open 
 | `baseUrl` | empty | Override API base; empty → `https://openrouter.ai/api/v1` |
 | `maxTokens` | `0` | Max output tokens (`0` = API default) |
 | `modelIdOverrides` | utility → `deepseek/deepseek-chat` | Remap picker IDs to API slugs |
-| `customModels` | `[]` | Extra slugs or objects (`id`, `thinking`, `imageInput`, …) |
+| `customModels` | `[]` | Extra slugs or objects (`id`, `thinking`, `imageInput`, …). `imageInput: true` opts a slug into native |
 | `agentRoles` | `{}` | Swarm: `research`, `review`, `implementFallback` |
-| `visionModel` | empty | VS Code vision fallback (`vendor/id`) |
-| `visionPrompt` | built-in OCR-first prompt | Image description prompt (proxy mode) |
-| `visionMode` | `auto` | Image routing: `auto` / `native` / `proxy` / `mcp` (see [Attach images](#attach-images)) |
-| `imageHandlingPrompt` | built-in | System instruction for `mcp` vision mode |
-| `imageStoredPrompt` | built-in | Per-image local-path prompt (`mcp`) |
-| `mcp.imageCleanupMode` | `manual` | `manual` / `ttl-7d` for stored MCP images |
-| `mcp.imageCapableTools` | `[]` | Extra MCP tool IDs treated as image readers |
+| `visionMode` | `auto` | Image routing: `auto` / `native` / `proxy` / `mcp` — [Attach images](#attach-images) |
+| `visionModel` | empty | VS Code vision fallback (`vendor/id`). Hidden as advanced; set via **Configure Vision Proxy** |
+| `visionPrompt` | built-in OCR-first prompt | Instruction to the **describer** in proxy mode. Edit in `settings.json`, not the proxy panel |
+| `imageHandlingPrompt` | built-in | MCP system instruction (every MCP-mode turn). Edit in `settings.json` |
+| `imageStoredPrompt` | built-in | MCP per-image path line (`{0}` label, `{1}` path). Edit in `settings.json` |
+| `mcp.imageCleanupMode` | `manual` | Stored MCP images: `manual` or `ttl-7d` |
+| `mcp.imageCapableTools` | `[]` | Extra Copilot runtime IDs treated as image readers |
 | `ponytailMode` | `full` | `off` / `lite` / `full` / `ultra` |
 | `codeSimplifier` | `true` | Post-edit simplification |
 | `stripThinkTags` | `auto` | Strip leaked reasoning tags |
@@ -269,7 +324,7 @@ Example — add a free model, enable native vision on a custom slug, and a proje
 ```json
 {
   "extensions.supportAgentsWindow": {
-    "abbalochdev.openrouter-for-copilot": true
+    "wylasdasd.openrouter-for-copilot": true
   }
 }
 ```
@@ -299,6 +354,10 @@ MCP needs tool calling **and** an image-capable tool. If neither a tool nor a vi
 ### Debug logging
 
 Set `debugMode` to `metadata` and run **OpenRouter: Show Logs**. For full request payloads (contains prompt text), use `verbose` and **OpenRouter: Open Request Dumps Folder**.
+
+## Code structure
+
+Layout of `src/` (runtime, provider, client, agents, vision) and the Copilot → OpenRouter request path: [docs/code-structure.md](docs/code-structure.md). Retries, catalog cache, and vision internals: [docs/architecture-optimizations.md](docs/architecture-optimizations.md).
 
 ## License
 
