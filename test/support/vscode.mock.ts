@@ -20,6 +20,24 @@ export class LanguageModelDataPart {
 	) {}
 }
 
+export class CancellationError extends Error {
+	constructor() {
+		super('Canceled');
+		this.name = 'Canceled';
+	}
+}
+
+export class CancellationTokenSource {
+	readonly token = {
+		isCancellationRequested: false,
+		onCancellationRequested: () => ({ dispose() {} }),
+	};
+	cancel(): void {
+		this.token.isCancellationRequested = true;
+	}
+	dispose(): void {}
+}
+
 export class LanguageModelToolCallPart {
 	constructor(
 		readonly callId: string,
@@ -208,6 +226,8 @@ const vscode = {
 	LanguageModelTextPart,
 	LanguageModelThinkingPart,
 	LanguageModelDataPart,
+	CancellationError,
+	CancellationTokenSource,
 	LanguageModelToolCallPart,
 	LanguageModelToolResultPart,
 	ThemeIcon,

@@ -1,5 +1,6 @@
 import { LANGUAGE_MODEL_CHAT_SYSTEM_ROLE } from '../consts';
 import type { GLMMessage } from '../types';
+import { getGLMContentText } from '../glm-content';
 
 export type PonytailMode = 'off' | 'lite' | 'full' | 'ultra';
 
@@ -90,7 +91,7 @@ export function injectPonytailSystemMessage(
 		updated[firstSystemIndex] = {
 			...updated[firstSystemIndex],
 			// Prepend BEFORE existing system content for cache-stable ordering.
-			content: `${instruction}\n\n${updated[firstSystemIndex].content}`.trim(),
+			content: `${instruction}\n\n${getGLMContentText(updated[firstSystemIndex].content)}`.trim(),
 		};
 		return updated;
 	}

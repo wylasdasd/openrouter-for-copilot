@@ -81,7 +81,7 @@ describe('configuration helpers', () => {
 			maxOutputTokens: 131_072,
 			capabilities: {
 				toolCalling: true,
-				imageInput: true,
+				imageInput: false,
 				thinking: true,
 			},
 			requiresThinkingParam: true,
@@ -93,7 +93,7 @@ describe('configuration helpers', () => {
 			maxOutputTokens: 456,
 			capabilities: {
 				toolCalling: false,
-				imageInput: true,
+				imageInput: false,
 				thinking: false,
 			},
 			requiresThinkingParam: false,
@@ -118,7 +118,7 @@ describe('configuration helpers', () => {
 			name: 'Local DeepSeek Chat',
 			maxInputTokens: 42,
 			capabilities: {
-				imageInput: true,
+				imageInput: false,
 				thinking: false,
 			},
 		});

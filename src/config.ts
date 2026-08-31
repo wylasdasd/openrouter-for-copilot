@@ -14,6 +14,7 @@ import type {
 	ApiProtocol,
 	CustomModelConfig,
 	ModelDefinition,
+	ModelVisionMode,
 } from './types';
 
 export type DebugMode = 'minimal' | 'metadata' | 'verbose';
@@ -255,6 +256,21 @@ export function getAuditFreeModelProbeMs(): number {
 	return Math.max(500, Math.floor(n));
 }
 
+/**
+ * Resolve how image attachments reach the selected chat model.
+ *
+ * `auto` (default): native when the catalog says the model accepts images,
+ * otherwise proxy. An explicit `native` / `proxy` / `mcp` setting overrides
+ * every model.
+ */
+export function getModelVisionMode(vscodeModelId: string): ModelVisionMode {
+	const configured = vscode.workspace.getConfiguration(CONFIG_SECTION).get<string>('visionMode', 'auto');
+	if (configured === 'native' || configured === 'proxy' || configured === 'mcp') {
+		return configured;
+	}
+	return findModelDefinition(vscodeModelId)?.capabilities.imageInput ? 'native' : 'proxy';
+}
+
 function getConfiguredDebugMode(config: vscode.WorkspaceConfiguration): DebugMode | undefined {
 	const mode = config.inspect<unknown>('debugMode');
 	return (
@@ -293,7 +309,7 @@ function normalizeCustomModel(entry: unknown): ModelDefinition | undefined {
 		maxOutputTokens: getPositiveInteger(model.maxOutputTokens, CUSTOM_MODEL_MAX_OUTPUT_TOKENS),
 		capabilities: {
 			toolCalling: model.toolCalling === false ? false : true,
-			imageInput: true,
+			imageInput: model.imageInput === true,
 			thinking,
 		},
 		requiresThinkingParam: thinking,

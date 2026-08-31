@@ -256,6 +256,18 @@ const zh: Translations = {
 		'[{0}] 网络请求失败。请检查网络连接、防火墙或代理设置，以及自定义 baseUrl。',
 	'error.unknown': 'GLM 请求失败：{0}',
 
+	'command.cleanupStoredImages.confirm':
+		'删除所有已存储的 MCP 图片？此操作不可撤销；其他正在进行的会话或将来重放的历史会话可能仍会引用这些图片。',
+	'command.cleanupStoredImages.confirmYes': '删除',
+	'command.cleanupStoredImages.done': '已删除 {0} 个已存储的 MCP 图片。',
+	'command.cleanupStoredImages.failed': '清理已存储图片失败，请运行 “OpenRouter: 显示日志” 查看详情。',
+	'vision.mcp.conflict.toolCallingDisabled':
+		'当前模型的图片处理方式为 “MCP 工具”，但工具调用已被禁用。MCP 图片模式依赖工具调用读取本地图片。请启用工具调用，或将 openrouter-for-copilot.visionMode 改为 auto / native / proxy。',
+	'vision.mcp.fallbackToProxy':
+		'当前会话未检测到可用的图片 MCP 工具，已自动回退到视觉代理模式处理本请求的图片。如需使用 MCP 图片模式，请启用一个能读取本地图片的工具，或通过 “openrouter-for-copilot.mcp.imageCapableTools” 添加聊天工具列表中的完整运行时 ID。\n\n',
+	'vision.mcp.conflict.noImageTool':
+		'当前模型的图片处理方式为 “MCP 工具”，但本会话没有可用的图片 MCP 工具，且未配置视觉代理。请：（1）启用一个支持本地图片路径的 MCP 工具；（2）通过 “openrouter-for-copilot.mcp.imageCapableTools” 添加完整运行时 ID；或（3）运行 “OpenRouter: 配置视觉代理”。',
+
 	// Extension
 	'extension.activateFailed': 'GLM 激活失败，请运行 "GLM: 显示日志" 查看详情。',
 	'extension.deactivateFailed': 'GLM 停用异常',
@@ -543,6 +555,19 @@ const en: Translations = {
 	'error.network.generic':
 		'[{0}] Network request failed. Check your network connection, firewall, or proxy settings, and your custom baseUrl.',
 	'error.unknown': 'GLM request failed: {0}',
+
+	'command.cleanupStoredImages.confirm':
+		'Delete all stored MCP images? This cannot be undone; other ongoing or future-replayed conversations may still reference these files.',
+	'command.cleanupStoredImages.confirmYes': 'Delete',
+	'command.cleanupStoredImages.done': 'Deleted {0} stored MCP image(s).',
+	'command.cleanupStoredImages.failed':
+		'Failed to clean up stored images. Run "OpenRouter: Show Logs" for details.',
+	'vision.mcp.conflict.toolCallingDisabled':
+		'This model\'s vision mode is "MCP tool", but tool calling is disabled. MCP vision mode relies on tool calls to read local image files. Enable tool calling, or set openrouter-for-copilot.visionMode to auto / native / proxy.',
+	'vision.mcp.fallbackToProxy':
+		'No image-capable MCP tool is available in this session; this request\'s images are being handled by the vision proxy instead. To use MCP image mode, enable a tool whose schema accepts a local image path, or add the exact runtime tool ID via "openrouter-for-copilot.mcp.imageCapableTools".\n\n',
+	'vision.mcp.conflict.noImageTool':
+		'This model\'s vision mode is "MCP tool", but no image-capable MCP tool is available in this session and no vision proxy is configured. Either (1) enable an image-capable MCP tool; (2) add the exact runtime tool ID via "openrouter-for-copilot.mcp.imageCapableTools"; or (3) run "OpenRouter: Configure Vision Proxy".',
 
 	// Extension
 	'extension.activateFailed': 'GLM failed to activate. Run "GLM: Show Logs" for details.',

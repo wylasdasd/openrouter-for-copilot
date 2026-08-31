@@ -2,8 +2,9 @@ import { createHash } from 'crypto';
 import vscode from 'vscode';
 import { getDebugLoggingEnabled } from '../../config';
 import { LANGUAGE_MODEL_CHAT_SYSTEM_ROLE } from '../../consts';
+import { getGLMContentText } from '../../glm-content';
 import { logger } from '../../logger';
-import type { GLMMessage, GLMRequest, GLMTool, GLMUsage } from '../../types';
+import type { GLMMessage, GLMRequest, GLMTool, GLMUsage, ModelVisionMode } from '../../types';
 import { REPLAY_MARKER_MIME, parseFirstReplayMarker } from '../replay';
 import {
 	classifyGLMRequest,
@@ -176,6 +177,7 @@ export interface BeginCacheDiagnosticsOptions {
 	visionModelId?: string;
 	visionProxySource?: VisionProxySource;
 	visionStats?: VisionPipelineStats;
+	visionMode?: ModelVisionMode;
 	ponytailMode?: string;
 }
 
@@ -440,7 +442,7 @@ class DefaultCacheDiagnosticsRecorder implements CacheDiagnosticsRecorder {
 				logger.info(message);
 			}
 		}
-		const visionTrace = formatVisionTrace(visionResolution, options.visionStats);
+		const visionTrace = formatVisionTrace(visionResolution, options.visionStats, options.visionMode);
 		if (visionTrace) {
 			logger.info(formatRequestLogLine(requestKind, `[cache-trace #${requestId}] ${visionTrace}`));
 		}
@@ -913,6 +915,7 @@ function getMessageText(message: vscode.LanguageModelChatRequestMessage): string
 function formatVisionTrace(
 	stats: VisionMessageStats,
 	pipelineStats: VisionPipelineStats | undefined,
+	visionMode: ModelVisionMode | undefined,
 ): string | undefined {
 	if (
 		stats.inputImageParts === 0 &&
@@ -942,6 +945,11 @@ function formatVisionTrace(
 		appendNumberIfNonZero(parts, 'failed', pipelineStats.failedImageMessages);
 		appendNumberIfNonZero(parts, 'markerChars', pipelineStats.markerVisionTextChars);
 		appendNumberIfNonZero(parts, 'invalidMarkerVision', pipelineStats.invalidMarkerVisionMetadata);
+		appendNumberIfNonZero(parts, 'nativeParts', pipelineStats.nativeImageParts);
+		appendNumberIfNonZero(parts, 'nativeMessages', pipelineStats.nativeImageMessages);
+		appendNumberIfNonZero(parts, 'nativeBytes', pipelineStats.nativeImageBytes);
+		appendNumberIfNonZero(parts, 'nativeBudgetOmittedParts', pipelineStats.nativeBudgetOmittedParts);
+		appendNumberIfNonZero(parts, 'nativeResizeFailures', pipelineStats.nativeResizeFailures);
 	} else {
 		appendNumberIfNonZero(parts, 'generated', stats.describedImageMessages);
 		appendNumberIfNonZero(parts, 'failed', stats.failedImageMessages);
@@ -949,6 +957,9 @@ function formatVisionTrace(
 	}
 
 	parts.push(`model=${visionModel}`);
+	if (visionMode) {
+		parts.push(`mode=${visionMode}`);
+	}
 	if (stats.visionProxySource) {
 		parts.push(`source=${stats.visionProxySource}`);
 	}
@@ -1626,21 +1637,22 @@ function summarizeMessage(
 		: ('none' as const);
 	const hasReasoningContent = message.reasoning_content !== undefined;
 	const hasEmptyReasoningContent = hasReasoningContent && reasoningChars === 0;
-	const imageDescriptionCount = countLiteral(message.content, '[Image Description:');
-	const unableImageCount = countLiteral(message.content, IMAGE_DESCRIPTION_UNAVAILABLE);
-	const urlCount = countRegex(message.content, /https?:\/\//g);
-	const codeFenceCount = countLiteral(message.content, '```');
-	const likelyPathCount = countLikelyPaths(message.content);
+	const content = getGLMContentText(message.content);
+	const imageDescriptionCount = countLiteral(content, '[Image Description:');
+	const unableImageCount = countLiteral(content, IMAGE_DESCRIPTION_UNAVAILABLE);
+	const urlCount = countRegex(content, /https?:\/\//g);
+	const codeFenceCount = countLiteral(content, '```');
+	const likelyPathCount = countLikelyPaths(content);
 
 	return {
 		index,
 		role: message.role,
 		hash: hashString(stableStringify(message)),
-		contentHash: hashString(message.content),
-		contentHeadHash: hashString(message.content.slice(0, HASH_WINDOW_CHARS)),
-		contentTailHash: hashString(message.content.slice(-HASH_WINDOW_CHARS)),
-		contentChars: message.content.length,
-		contentLines: countLines(message.content),
+		contentHash: hashString(content),
+		contentHeadHash: hashString(content.slice(0, HASH_WINDOW_CHARS)),
+		contentTailHash: hashString(content.slice(-HASH_WINDOW_CHARS)),
+		contentChars: content.length,
+		contentLines: countLines(content),
 		imageDescriptionCount,
 		unableImageCount,
 		urlCount,
@@ -1656,7 +1668,7 @@ function summarizeMessage(
 		missingPostToolReasoning: assistantAfterToolResult && !hasReasoningContent,
 		missingPostToolCallReasoning: afterToolResultKind === 'tool-call' && !hasReasoningContent,
 		missingPostToolFinalReasoning: afterToolResultKind === 'final' && !hasReasoningContent,
-		contentSections: index === 0 ? summarizeSystemPromptSections(message.content) : undefined,
+		contentSections: index === 0 ? summarizeSystemPromptSections(content) : undefined,
 	};
 }
 
@@ -1832,33 +1844,34 @@ function summarizeStats(messages: GLMMessage[], toolCount: number): CacheTraceSt
 			systemMessages += 1;
 		}
 
-		totalContentChars += message.content.length;
-		if (message.content.length > LARGE_MESSAGE_CHARS) {
+		const content = getGLMContentText(message.content);
+		totalContentChars += content.length;
+		if (content.length > LARGE_MESSAGE_CHARS) {
 			largeMessages += 1;
 		}
 
-		const imageDescriptions = countLiteral(message.content, '[Image Description:');
+		const imageDescriptions = countLiteral(content, '[Image Description:');
 		if (imageDescriptions > 0) {
 			imageDescriptionMessages += 1;
 			imageDescriptionParts += imageDescriptions;
 		}
-		if (message.content.includes(IMAGE_DESCRIPTION_UNAVAILABLE)) {
+		if (content.includes(IMAGE_DESCRIPTION_UNAVAILABLE)) {
 			unableImageMessages += 1;
 		}
 
-		const messageUrlCount = countRegex(message.content, /https?:\/\//g);
+		const messageUrlCount = countRegex(content, /https?:\/\//g);
 		if (messageUrlCount > 0) {
 			urlMessages += 1;
 			urlCount += messageUrlCount;
 		}
 
-		const messageCodeFenceCount = countLiteral(message.content, '```');
+		const messageCodeFenceCount = countLiteral(content, '```');
 		if (messageCodeFenceCount > 0) {
 			codeFenceMessages += 1;
 			codeFenceCount += messageCodeFenceCount;
 		}
 
-		const messageLikelyPathCount = countLikelyPaths(message.content);
+		const messageLikelyPathCount = countLikelyPaths(content);
 		if (messageLikelyPathCount > 0) {
 			likelyPathMessages += 1;
 			likelyPathCount += messageLikelyPathCount;

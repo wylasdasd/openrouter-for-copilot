@@ -1,26 +1,29 @@
-import { createHash } from 'crypto';
 import vscode from 'vscode';
+import { createHash } from 'crypto';
 import { t } from '../../i18n';
 import { toWellFormedString } from '../../json';
+import type { ModelVisionMode } from '../../types';
 import { parseFirstReplayMarker } from '../replay';
 import { createVisionProxyFailureNotice, createVisionProxyMissingNotice } from '../tools/notices';
 import {
-    IMAGE_DESCRIPTION_PREFIX,
-    IMAGE_DESCRIPTION_SUFFIX,
-    IMAGE_DESCRIPTION_UNAVAILABLE,
+	IMAGE_DESCRIPTION_PREFIX,
+	IMAGE_DESCRIPTION_SUFFIX,
+	IMAGE_DESCRIPTION_UNAVAILABLE,
 } from './consts';
 import { logVisionProxyDescribeFailed, logVisionProxyUnavailable } from './log';
+import { buildImagePromptText, storeImage } from './image-store'; // [FORK] mcp mode
+import { prepareNativeImageMessages } from './native';
 import {
-    formatVisionProxyErrorCode,
-    getVisionProxyErrorDisplayCode,
-    isVisionProxyError,
+	formatVisionProxyErrorCode,
+	getVisionProxyErrorDisplayCode,
+	isVisionProxyError,
 } from './protocols/errors';
 import { getVisionPrompt } from './sources/vscode';
 import type {
-    VisionDescriber,
-    VisionImagePart,
-    VisionResolutionResult,
-    VisionResolutionStats,
+	VisionDescriber,
+	VisionImagePart,
+	VisionResolutionResult,
+	VisionResolutionStats,
 } from './types';
 
 // ---- Vision description LRU cache ----
@@ -36,10 +39,6 @@ interface VisionCacheEntry {
 
 const visionDescriptionCache = new Map<string, VisionCacheEntry>();
 
-/**
- * Compute a fast content fingerprint for an image buffer.
- * Uses first/last 512 bytes + total length to avoid hashing large payloads.
- */
 function computeImageFingerprint(data: Uint8Array): string {
 	const len = data.byteLength;
 	if (len <= 1024) {
@@ -47,11 +46,7 @@ function computeImageFingerprint(data: Uint8Array): string {
 	}
 	const head = data.slice(0, 512);
 	const tail = data.slice(len - 512);
-	return createHash('sha256')
-		.update(head)
-		.update(tail)
-		.update(String(len))
-		.digest('hex');
+	return createHash('sha256').update(head).update(tail).update(String(len)).digest('hex');
 }
 
 function getCachedVisionDescription(data: Uint8Array): string | undefined {
@@ -65,7 +60,6 @@ function getCachedVisionDescription(data: Uint8Array): string | undefined {
 }
 
 function setCachedVisionDescription(data: Uint8Array, description: string): void {
-	// Evict oldest entries when cache is full.
 	if (visionDescriptionCache.size >= VISION_CACHE_MAX_ENTRIES) {
 		const oldestKey = visionDescriptionCache.keys().next().value;
 		if (oldestKey) {
@@ -93,11 +87,23 @@ export async function resolveImageMessages(
 	messages: readonly vscode.LanguageModelChatRequestMessage[],
 	token: vscode.CancellationToken,
 	getDescriber: () => Promise<VisionDescriber | undefined>,
+	visionMode: ModelVisionMode = 'proxy',
 ): Promise<VisionResolutionResult> {
 	const stats = createVisionResolutionStats();
 	collectInputImageStats(messages, stats);
 	if (stats.inputImageParts === 0) {
 		return { messages, stats, replayMarkerMetadata: {} };
+	}
+	if (visionMode === 'native') {
+		return prepareNativeImageMessages(messages, token, stats);
+	}
+	// [FORK] mcp mode: strip images from the request, persist them to disk, and
+	// replace each image part with a short text prompt pointing to the file path.
+	// This lets an image-capable MCP tool read the image by path, avoiding the
+	// massive context bloat of base64 for text-only models. Kept as a single
+	// early-return branch so the upstream proxy/native logic below is untouched.
+	if (visionMode === 'mcp') {
+		return stripImagesForMcpMode(messages, token, stats);
 	}
 
 	const markerBindings = createVisionMarkerBindings(messages, stats);
@@ -181,6 +187,13 @@ function createVisionResolutionStats(): VisionResolutionStats {
 	return {
 		inputImageParts: 0,
 		inputImageMessages: 0,
+		inputImageBytes: 0,
+		nativeImageParts: 0,
+		nativeImageMessages: 0,
+		nativeImageBytesAfterResize: 0,
+		nativeImageBytes: 0,
+		nativeBudgetOmittedParts: 0,
+		nativeResizeFailures: 0,
 		currentImageMessages: 0,
 		generatedImageMessages: 0,
 		replayedImageMessages: 0,
@@ -198,12 +211,13 @@ function collectInputImageStats(
 	stats: VisionResolutionStats,
 ): void {
 	for (const message of messages) {
-		const imageParts = getImageParts(message).length;
-		if (imageParts === 0) {
+		const imageParts = getImageParts(message);
+		if (imageParts.length === 0) {
 			continue;
 		}
 		stats.inputImageMessages += 1;
-		stats.inputImageParts += imageParts;
+		stats.inputImageParts += imageParts.length;
+		stats.inputImageBytes += imageParts.reduce((total, part) => total + part.data.byteLength, 0);
 	}
 }
 
@@ -302,8 +316,6 @@ async function resolveCurrentVisionText(
 		};
 	}
 
-	// Check the LRU cache for previously described images (avoids redundant
-	// vision API calls when the same screenshot is sent across turns).
 	if (imageParts.length === 1) {
 		const cached = getCachedVisionDescription(imageParts[0].data);
 		if (cached) {
@@ -329,7 +341,6 @@ async function resolveCurrentVisionText(
 			);
 		}
 
-		// Cache the description for single-image messages.
 		if (imageParts.length === 1) {
 			setCachedVisionDescription(imageParts[0].data, createImageDescriptionText(description));
 		}
@@ -437,4 +448,123 @@ function toVisionImagePart(part: vscode.LanguageModelDataPart): VisionImagePart 
 		mimeType: part.mimeType,
 		data: part.data,
 	};
+}
+
+// ---- [FORK] MCP mode: strip images, persist to disk, leave file-path prompts ----
+
+/**
+ * MCP vision mode: for every message that carries image parts, persist the
+ * images to disk (content-addressable) and replace them with a short text
+ * prompt pointing to the file path. Non-image parts are preserved.
+ *
+ * Unlike `proxy` mode, no vision model is called and no base64 is kept in
+ * context — the model is expected to call an image-capable MCP tool to read
+ * the stored file on demand. This is the right mode for text-only models
+ * (e.g. a Claude-compatible text model behind the Anthropic endpoint) where
+ * injecting base64 would waste context without any benefit.
+ *
+ * If storage fails for any image, that image falls back to an
+ * "[unavailable]" text marker (still no base64), so a storage hiccup never
+ * silently bloats the context.
+ */
+async function stripImagesForMcpMode(
+	messages: readonly vscode.LanguageModelChatRequestMessage[],
+	token: vscode.CancellationToken,
+	stats: VisionResolutionStats,
+): Promise<VisionResolutionResult> {
+	// [FORK] Collect per-part replacements indexed by (messageIndex, partIndex)
+	// and apply them in place — mirroring how `prepareNativeImageMessages`
+	// preserves the original text/image interleaving. The earlier version
+	// gathered all non-image parts and appended image-path text to the end of
+	// each message, which destroyed the original ordering for interleaved
+	// text/image parts (e.g. "请分析这张图" + image became a single merged
+	// string with no separator).
+	const replacements: McpImageReplacement[] = [];
+
+	for (let messageIndex = 0; messageIndex < messages.length; messageIndex += 1) {
+		const message = messages[messageIndex];
+		const content = message.content as readonly vscode.LanguageModelInputPart[];
+		// Sequential index of image parts WITHIN this message, for "Image n of m" labels.
+		let imageOrdinal = 0;
+		const imageCount = content.filter(isImageDataPart).length;
+		for (let partIndex = 0; partIndex < content.length; partIndex += 1) {
+			const part = content[partIndex];
+			if (!isImageDataPart(part)) {
+				continue;
+			}
+			const filePath = await storeImage(part.data, part.mimeType, token);
+			stats.droppedImageParts += 1;
+			if (filePath) {
+				replacements.push({
+					messageIndex,
+					partIndex,
+					part: new vscode.LanguageModelTextPart(
+						// [FORK] PR #15 Finding 7: wrap the image-path prompt in newlines on
+						// BOTH sides. convert.ts merges adjacent text parts by
+						// concatenation, so a prompt with only a leading newline would
+						// still be glued to the FOLLOWING text part
+						// ("...prompt textafter-image"). Trailing newline keeps the
+						// semantic boundary on both sides.
+						'\n' + buildImagePromptText(filePath, imageOrdinal, imageCount) + '\n',
+					),
+				});
+			} else {
+				// Storage failed — fall back to an unavailable marker. Never keep
+				// base64 in context: it would bloat text models with no benefit.
+				logVisionProxyUnavailable();
+				stats.unavailableImageMessages += 1;
+				replacements.push({
+					messageIndex,
+					partIndex,
+					part: new vscode.LanguageModelTextPart(
+						// [FORK] PR #15 F7: symmetric leading+trailing newline, same
+						// rationale as the success path above.
+						'\n' + IMAGE_DESCRIPTION_UNAVAILABLE + '\n',
+					),
+				});
+			}
+			imageOrdinal += 1;
+		}
+	}
+
+	return {
+		messages: applyMcpImageReplacements(messages, replacements),
+		stats,
+		replayMarkerMetadata: {},
+	};
+}
+
+interface McpImageReplacement {
+	messageIndex: number;
+	partIndex: number;
+	part: vscode.LanguageModelInputPart;
+}
+
+/** Apply per-(message,part) replacements in place, preserving all other parts. */
+function applyMcpImageReplacements(
+	messages: readonly vscode.LanguageModelChatRequestMessage[],
+	replacements: readonly McpImageReplacement[],
+): readonly vscode.LanguageModelChatRequestMessage[] {
+	const byMessage = new Map<number, Map<number, vscode.LanguageModelInputPart>>();
+	for (const replacement of replacements) {
+		let bucket = byMessage.get(replacement.messageIndex);
+		if (!bucket) {
+			bucket = new Map<number, vscode.LanguageModelInputPart>();
+			byMessage.set(replacement.messageIndex, bucket);
+		}
+		bucket.set(replacement.partIndex, replacement.part);
+	}
+	return messages.map((message, messageIndex) => {
+		const bucket = byMessage.get(messageIndex);
+		if (!bucket) {
+			return message;
+		}
+		return {
+			role: message.role,
+			content: (message.content as readonly vscode.LanguageModelInputPart[]).map(
+				(part, partIndex) => bucket.get(partIndex) ?? part,
+			),
+			name: message.name,
+		} as unknown as vscode.LanguageModelChatRequestMessage;
+	});
 }

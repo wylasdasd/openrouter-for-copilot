@@ -12,6 +12,7 @@
  */
 
 import type { GLMMessage } from '../types';
+import { getGLMContentText } from '../glm-content';
 
 const CODE_SIMPLIFIER_INSTRUCTION = [
 	'### CODE SIMPLIFIER (ACTIVE)',
@@ -72,7 +73,7 @@ export function injectCodeSimplifierSystemMessage(messages: GLMMessage[]): GLMMe
 		const updated = [...messages];
 		updated[firstSystemIndex] = {
 			...updated[firstSystemIndex],
-			content: `${instruction}\n\n${updated[firstSystemIndex].content}`.trim(),
+			content: `${instruction}\n\n${getGLMContentText(updated[firstSystemIndex].content)}`.trim(),
 		};
 		return updated;
 	}

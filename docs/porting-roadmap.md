@@ -34,7 +34,7 @@ Migrated keys:
 - `apiKey` (settings fallback — primary storage is SecretStorage)
 - `endpoint` (copied if present, but **no longer read** by this extension)
 
-**Not migrated:** `rules`, `allowExtraTools`, `auditFreeModelProbeMs` — set these manually if needed.
+**Not migrated:** `rules`, `allowExtraTools`, `auditFreeModelProbeMs`, `visionMode`, `imageHandlingPrompt`, `imageStoredPrompt`, `mcp.imageCleanupMode`, `mcp.imageCapableTools` — set these manually if needed. Vision routing is documented in the README **Attach images** section.
 
 ---
 

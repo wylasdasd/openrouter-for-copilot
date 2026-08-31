@@ -92,7 +92,7 @@ describe('request preparation', () => {
 			id: 'team-coder',
 			capabilities: {
 				toolCalling: false,
-				imageInput: true,
+				imageInput: false,
 				thinking: false,
 			},
 		});

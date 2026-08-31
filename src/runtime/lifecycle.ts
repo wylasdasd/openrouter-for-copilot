@@ -11,6 +11,7 @@ import { initializeDiagnostics } from './diagnostics';
 import { registerAgentPipeline } from './agent-pipeline';
 import { registerProvider } from './provider';
 import { showWelcomeIfNeeded } from './welcome';
+import { initImageStore } from '../provider/vision/image-store';
 
 let activeProvider: GLMChatProvider | undefined;
 
@@ -20,6 +21,7 @@ export async function activate(context: vscode.ExtensionContext): Promise<void> 
 	await authManager.migrateLegacySecrets();
 	await initializeDiagnostics(context);
 	await seedChatLanguageModelDefaults(context);
+	await initImageStore(context.globalStorageUri);
 	registerCommands(context);
 	registerActionUrls(context);
 	registerAgentPipeline(context);

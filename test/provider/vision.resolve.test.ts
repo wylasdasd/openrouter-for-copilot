@@ -115,4 +115,22 @@ describe('vision message resolution', () => {
 		expect(result.replayMarkerMetadata.visionText).toBe(IMAGE_DESCRIPTION_UNAVAILABLE);
 		expect(result.initialResponseNotice).toContain('Vision Proxy is unavailable');
 	});
+
+	it('keeps image data parts in native mode', async () => {
+		const sourceImage = imagePart();
+		const result = await resolveImageMessages(
+			[userMessage([new vscode.LanguageModelTextPart('Look'), sourceImage])],
+			token,
+			async () => {
+				throw new Error('describer should not be requested in native mode');
+			},
+			'native',
+		);
+
+		expect(result.stats.nativeImageParts).toBe(1);
+		expect(result.stats.droppedImageParts).toBe(0);
+		const content = result.messages[0]?.content ?? [];
+		expect(content).toHaveLength(2);
+		expect(content[1]).toBeInstanceOf(vscode.LanguageModelDataPart);
+	});
 });

@@ -7,7 +7,9 @@
 | `customModels` | 添加 OpenRouter slug |
 | `modelIdOverrides` | 映射 picker ID |
 | `agentRoles` | 固定 `@swarm` 各角色模型 |
+| `visionMode` | `auto` / `native` / `proxy` / `mcp` 图片路由（设置 UI；详见 README） |
 | `visionModel` | 视觉代理 VS Code 回退 |
+| `mcp.imageCleanupMode` | 已存 MCP 图片：`manual` 或 `ttl-7d` |
 | `ponytailMode` | Ponytail 强度 |
 | `debugMode` | 日志级别 |
 
@@ -23,4 +25,4 @@
 }
 ```
 
-完整设置与排错见 [README.zh-cn.md](../../README.zh-cn.md)。
+完整设置、图片使用说明与排错见 [README.zh-cn.md](../../README.zh-cn.md#发送图片)。

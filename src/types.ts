@@ -4,9 +4,25 @@
 
 // ---- API request/response types ----
 
+/** OpenAI-compatible multimodal text segment. */
+export interface GLMTextContentPart {
+	type: 'text';
+	text: string;
+}
+
+/** OpenAI-compatible image segment backed by a generated data URL. */
+export interface GLMImageContentPart {
+	type: 'image_url';
+	image_url: {
+		url: string;
+	};
+}
+
+export type GLMMessageContent = string | Array<GLMTextContentPart | GLMImageContentPart>;
+
 export interface GLMMessage {
 	role: 'system' | 'user' | 'assistant' | 'tool';
-	content: string;
+	content: GLMMessageContent;
 	tool_call_id?: string;
 	tool_calls?: GLMToolCall[];
 	reasoning_content?: string;
@@ -96,6 +112,17 @@ export interface StreamCallbacks {
 
 export type ApiProtocol = 'openai' | 'anthropic' | 'responses';
 
+/**
+ * How image attachments reach the model selected in Copilot.
+ *
+ * - `proxy`: a vision model describes images as text, then the selected model
+ *   receives that text. Automatic proxy uses OpenRouter Gemini Flash.
+ * - `native`: images are resized and sent as base64 directly to the API model.
+ * - `mcp`: images are stored on disk and replaced with a local-path prompt so
+ *   an image-capable MCP tool can read them.
+ */
+export type ModelVisionMode = 'proxy' | 'native' | 'mcp';
+
 export type CustomModelConfigEntry = string | CustomModelConfig;
 
 export interface CustomModelConfig {
@@ -105,6 +132,7 @@ export interface CustomModelConfig {
 	maxOutputTokens?: number;
 	toolCalling?: boolean;
 	thinking?: boolean;
+	imageInput?: boolean;
 }
 
 // ---- Model definitions ----

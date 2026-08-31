@@ -1,8 +1,8 @@
 # Architecture — OpenRouter for Copilot
 
-> Last updated: 2026-08-28 · v3.11.14
+> Last updated: 2026-08-31 · vision native / proxy / mcp
 
-VS Code extension that registers **`openrouter`** as a Copilot Chat language-model provider. Chat traffic uses the **OpenAI-compatible** OpenRouter API (`POST /api/v1/chat/completions`). Model metadata comes from **`GET /api/v1/models`**.
+VS Code extension that registers **`openrouter-for-copilot`** as a Copilot Chat language-model provider. Chat traffic uses the **OpenAI-compatible** OpenRouter API (`POST /api/v1/chat/completions`). Model metadata comes from **`GET /api/v1/models`**.
 
 ---
 
@@ -27,7 +27,7 @@ flowchart LR
 | `src/provider/index.ts` | `LanguageModelChatProvider` — models, token count, streaming |
 | `src/provider/request.ts` | Build OpenAI-compatible payload; Ponytail, rules, tools |
 | `src/client/core.ts` | HTTP streaming, retries, tool-halving, overflow retry |
-| `src/provider/vision/` | Describe images before text-only models |
+| `src/provider/vision/` | Image routing: native bytes, proxy description, optional MCP store |
 | `src/agents/*`, `src/runtime/agent-pipeline.ts` | `@swarm` pipeline |
 | `src/provider/pricing/` | USD cost estimates in status bar |
 
@@ -45,14 +45,15 @@ flowchart LR
 
 ---
 
-## Vision proxy
+## Vision
 
-Automatic mode (default):
+Image routing matches [GLM for Copilot](https://github.com/umbrella22/GLM-for-copilot). Default `visionMode` is `auto`:
 
-1. Call OpenRouter at the configured `baseUrl` with `google/gemini-2.0-flash-001`.
-2. On failure, fall back to a VS Code/Copilot vision model (`visionModel` setting or installed LM).
+1. **native** — catalog `imageInput` is true: resize (`_chat.resizeImage`) and send `image_url` under a 2.5 MiB binary budget (`vision/native.ts`). Native failures do not fall back to proxy.
+2. **proxy** — otherwise describe with OpenRouter `google/gemini-2.0-flash-001`, then a VS Code/Copilot vision model. OCR-first prompt; description wrapped as untrusted image content. Proxy source is configured by **OpenRouter: Configure Vision Proxy** (`vision/ui/`).
+3. **mcp** — optional global override: store files under globalStorage (`vision/image-store.ts`) and leave a local-path prompt. Requires an image-capable MCP tool (schema or `mcp.imageCapableTools`). If none is available, fall back to proxy when configured; otherwise error.
 
-Manual mode via **OpenRouter: Configure Vision Proxy** — custom API endpoint or VS Code LM source.
+`openrouter-for-copilot.visionMode` of `native` / `proxy` / `mcp` forces that mode for every picker model. Custom slugs default to `imageInput: false`. See README **Attach images** for usage.
 
 ---
 
@@ -81,7 +82,7 @@ If the audit finds no alive models, fall back to `meta-llama/llama-3.3-70b-instr
 | Swarm sub-agent retry | `agents/retry.ts` |
 | Swarm model failover | `agents/loop.ts`, `agents/implement.ts` |
 | Request dedup (utility kinds) | `provider/index.ts` |
-| Vision description cache | `provider/vision/resolve.ts` |
+| Vision description cache | `provider/vision/resolve.ts` (proxy mode) |
 
 Anthropic wire-protocol code remains in `src/client/anthropic/` for custom `baseUrl` overrides, but **OpenRouter defaults always use the OpenAI protocol** (`getApiProtocol()` → `'openai'`).
 

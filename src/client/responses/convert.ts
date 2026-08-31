@@ -1,3 +1,4 @@
+import { getGLMContentText, isGLMContentPartArray } from '../../glm-content';
 import type { GLMMessage, GLMRequest, GLMTool } from '../../types';
 
 interface ResponsesTextPart {
@@ -5,10 +6,15 @@ interface ResponsesTextPart {
 	text: string;
 }
 
+interface ResponsesImagePart {
+	type: 'input_image';
+	image_url: string;
+}
+
 interface ResponsesMessageItem {
 	type: 'message';
 	role: 'user' | 'assistant';
-	content: ResponsesTextPart[];
+	content: Array<ResponsesTextPart | ResponsesImagePart>;
 }
 
 interface ResponsesFunctionCallItem {
@@ -92,7 +98,7 @@ function extractInstructions(messages: GLMMessage[]): string | undefined {
 	const parts: string[] = [];
 	for (const msg of messages) {
 		if (msg.role === 'system') {
-			parts.push(msg.content);
+			parts.push(getGLMContentText(msg.content));
 		}
 	}
 	if (parts.length === 0) {
@@ -116,14 +122,14 @@ function convertInput(messages: GLMMessage[]): ResponsesInputItem[] {
 			input.push({
 				type: 'function_call_output',
 				call_id: msg.tool_call_id,
-				output: msg.content,
+				output: getGLMContentText(msg.content),
 			});
 			continue;
 		}
 
 		if (msg.role === 'assistant' && msg.tool_calls && msg.tool_calls.length > 0) {
 			if (msg.content) {
-				input.push(createAssistantMessage(msg.content));
+				input.push(createAssistantMessage(getGLMContentText(msg.content)));
 			}
 			for (const tc of msg.tool_calls) {
 				input.push({
@@ -140,17 +146,28 @@ function convertInput(messages: GLMMessage[]): ResponsesInputItem[] {
 			input.push({
 				type: 'message',
 				role: 'user',
-				content: [{ type: 'input_text', text: msg.content }],
+				content: convertUserContent(msg.content),
 			});
 			continue;
 		}
 
 		if (msg.role === 'assistant') {
-			input.push(createAssistantMessage(msg.content));
+			input.push(createAssistantMessage(getGLMContentText(msg.content)));
 		}
 	}
 
 	return input;
+}
+
+function convertUserContent(content: GLMMessage['content']): Array<ResponsesTextPart | ResponsesImagePart> {
+	if (!isGLMContentPartArray(content)) {
+		return content ? [{ type: 'input_text', text: content }] : [];
+	}
+	return content.map((part) =>
+		part.type === 'text'
+			? { type: 'input_text' as const, text: part.text }
+			: { type: 'input_image' as const, image_url: part.image_url.url },
+	);
 }
 
 function createAssistantMessage(content: string): ResponsesMessageItem {

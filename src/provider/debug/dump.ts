@@ -5,9 +5,10 @@ import { join } from 'path';
 import vscode from 'vscode';
 import { getRequestDumpEnabled } from '../../config';
 import { LANGUAGE_MODEL_CHAT_SYSTEM_ROLE } from '../../consts';
+import { getGLMContentText, isGLMContentPartArray, parseGLMImageDataUrl } from '../../glm-content';
 import { safeStringify, toWellFormedString } from '../../json';
 import { logger } from '../../logger';
-import type { GLMMessage, GLMRequest } from '../../types';
+import type { GLMMessage, GLMRequest, ModelVisionMode } from '../../types';
 import {
 	classifyGLMRequest,
 	classifyProviderRequest,
@@ -109,6 +110,7 @@ export interface DumpGLMRequestOptions {
 	visionModelId?: string;
 	visionProxySource?: VisionProxySource;
 	visionStats?: VisionResolutionStats;
+	visionMode?: ModelVisionMode;
 }
 
 export interface DumpProviderInputOptions {
@@ -211,12 +213,12 @@ export function dumpGLMRequest(request: GLMRequest, options: DumpGLMRequestOptio
 			createPipelineSnapshot('resolved', request, options.resolvedMessages, options, context),
 		);
 
-		const requestJson = await writeJsonFile(paths.request, request, (value) =>
+		const requestJson = await writeJsonFile(paths.request, redactNativeImagesForDump(request), (value) =>
 			JSON.stringify(value, null, 2),
 		);
 
 		if (msg0 && paths.msg0) {
-			await writeTextFile(paths.msg0, msg0.content);
+			await writeTextFile(paths.msg0, getGLMContentText(msg0.content));
 		}
 
 		await writeDumpObservation(
@@ -351,6 +353,7 @@ function createPipelineSnapshot(
 		vision:
 			stage === 'resolved'
 				? {
+						mode: options.visionMode ?? 'proxy',
 						modelId: options.visionModelId ?? null,
 						source: options.visionProxySource ?? null,
 						stats: options.visionStats ?? null,
@@ -360,6 +363,36 @@ function createPipelineSnapshot(
 		messages,
 		requestOptions: options.requestOptions,
 	});
+}
+
+function redactNativeImagesForDump(request: GLMRequest): object {
+	return {
+		...request,
+		messages: request.messages.map((message) => {
+			if (!isGLMContentPartArray(message.content)) {
+				return message;
+			}
+			return {
+				...message,
+				content: message.content.map((part) => {
+					if (part.type !== 'image_url') {
+						return part;
+					}
+					const image = parseGLMImageDataUrl(part.image_url.url);
+					const bytes = Buffer.from(image.data, 'base64');
+					return {
+						type: 'image_url',
+						image_url: {
+							url: '[redacted native image]',
+							mimeType: image.mimeType,
+							byteLength: bytes.byteLength,
+							sha256: hashBytes(bytes),
+						},
+					};
+				}),
+			};
+		}),
+	};
 }
 
 function createDumpSnapshot(options: {
@@ -670,7 +703,7 @@ function summarizeGLMSystemPrompt(messages: readonly GLMMessage[]): SystemPrompt
 		return createSystemPromptSummary(null, null, '', customizations);
 	}
 
-	return createSystemPromptSummary(0, message.role, message.content ?? '', customizations);
+	return createSystemPromptSummary(0, message.role, getGLMContentText(message.content), customizations);
 }
 
 function createSystemPromptSummary(
@@ -725,7 +758,7 @@ function summarizeGLMCustomizations(messages: readonly GLMMessage[]): Customizat
 	let latestUserHasCustomizationsUpdate = false;
 
 	for (const [index, message] of messages.entries()) {
-		const text = message.content ?? '';
+		const text = getGLMContentText(message.content);
 		customizationsUpdateCountInHistory += countLiteral(text, '<customizationsUpdate>');
 		if (message.role === 'user') {
 			latestUserMessageIndex = index;

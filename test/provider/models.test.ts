@@ -252,7 +252,7 @@ describe('model metadata helpers', () => {
 		expect(info.priceCategory).toBe('low');
 	});
 
-	it('includes custom models in picker metadata with Vision Proxy image support', () => {
+	it('includes custom models in picker metadata with Vision Proxy by default', () => {
 		__setConfigurationValue('openrouter-for-copilot.customModels', [
 			'team-coder',
 			{ id: 'no-thinking', thinking: false },
@@ -274,11 +274,11 @@ describe('model metadata helpers', () => {
 			tooltip: 'Custom OpenAI-compatible model',
 			capabilities: {
 				toolCalling: true,
-				imageInput: true,
+				imageInput: false,
 			},
 		});
 		expect(custom?.configurationSchema?.properties.reasoningEffort.default).toBe('max');
-		expect(noThinking?.capabilities.imageInput).toBe(true);
+		expect(noThinking?.capabilities.imageInput).toBe(false);
 		expect(noThinking?.configurationSchema).toBeUndefined();
 	});
 });

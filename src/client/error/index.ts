@@ -1,4 +1,5 @@
-import { isOfficialGLMBaseUrl, isOpenRouterBaseUrl } from '../../endpoint';
+import { isOfficialGLMBaseUrl, isOpenRouterBaseUrl, isOpencodeBaseUrl } from '../../endpoint';
+import { getGLMContentText } from '../../glm-content';
 import { t } from '../../i18n';
 import { safeStringify } from '../../json';
 import {
@@ -574,7 +575,7 @@ function getRequestDiagnosticMessage(context: RequestErrorContext): string {
 		request.tool_choice ? `toolChoice=${safeStringify(request.tool_choice)}` : undefined,
 		`toolCount=${request.tools?.length ?? 0}`,
 		`messageCount=${request.messages.length}`,
-		`messageChars=${request.messages.reduce((total, message) => total + message.content.length, 0)}`,
+		`messageChars=${request.messages.reduce((total, message) => total + getGLMContentText(message.content).length, 0)}`,
 	);
 }
 

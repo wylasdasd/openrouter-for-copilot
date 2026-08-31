@@ -1,6 +1,8 @@
-# Changelog
+## [Unreleased]
 
-All notable changes to **OpenRouter for Copilot** are documented here.
+### Features
+
+* **Vision** — align image routing with [GLM for Copilot](https://github.com/umbrella22/GLM-for-copilot): `native` (resize + 2.5 MiB budget) when the catalog model accepts images, `proxy` for text-only models (OCR-first untrusted description), and optional `mcp` (store locally for an image-capable MCP tool). Setting `visionMode` can force one mode for all models. README documents how to switch modes, configure the proxy panel, and use MCP.
 
 ## [3.11.18](https://github.com/abbalochdev/openrouter-for-copilot/compare/v3.11.17...v3.11.18) (2026-08-28)
 

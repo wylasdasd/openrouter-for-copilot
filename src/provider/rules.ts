@@ -18,6 +18,7 @@
  */
 
 import type { GLMMessage } from '../types';
+import { getGLMContentText } from '../glm-content';
 
 /**
  * Join user rules into one instruction block.
@@ -61,7 +62,7 @@ export function injectRulesSystemMessage(
 		updated[firstSystemIndex] = {
 			...updated[firstSystemIndex],
 			// Prepend BEFORE existing system content for cache-stable ordering.
-			content: `${instruction}\n\n${updated[firstSystemIndex].content}`.trim(),
+			content: `${instruction}\n\n${getGLMContentText(updated[firstSystemIndex].content)}`.trim(),
 		};
 		return updated;
 	}

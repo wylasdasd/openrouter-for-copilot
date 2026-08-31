@@ -191,4 +191,25 @@ describe('message and tool conversion', () => {
 			),
 		).toBe(2 + 'search'.length + 'Search files'.length + JSON.stringify({ type: 'object' }).length);
 	});
+
+	it('keeps native image parts as OpenAI image_url content', () => {
+		const data = new Uint8Array([1, 2, 3]);
+		const messages = convertMessages(
+			[
+				message(vscode.LanguageModelChatMessageRole.User, [
+					new vscode.LanguageModelTextPart('Look'),
+					new vscode.LanguageModelDataPart(data, 'image/png'),
+				]),
+			],
+			false,
+		);
+
+		expect(messages).toHaveLength(1);
+		expect(messages[0]?.role).toBe('user');
+		expect(Array.isArray(messages[0]?.content)).toBe(true);
+		const parts = messages[0]?.content as Array<{ type: string; text?: string; image_url?: { url: string } }>;
+		expect(parts[0]).toEqual({ type: 'text', text: 'Look' });
+		expect(parts[1]?.type).toBe('image_url');
+		expect(parts[1]?.image_url?.url).toMatch(/^data:image\/png;base64,/);
+	});
 });
