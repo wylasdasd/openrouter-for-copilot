@@ -359,6 +359,10 @@ Set `debugMode` to `metadata` and run **OpenRouter: Show Logs**. For full reques
 
 Layout of `src/` (runtime, provider, client, agents, vision) and the Copilot → OpenRouter request path: [docs/code-structure.md](docs/code-structure.md). Retries, catalog cache, and vision internals: [docs/architecture-optimizations.md](docs/architecture-optimizations.md).
 
+## Acknowledgements
+
+This work builds on [GLM for Copilot](https://github.com/umbrella22/GLM-for-copilot) and [OpenCode for Copilot](https://github.com/Abbalochdev/opencode-for-copilot). Thanks and lineage: [docs/acknowledgements.md](docs/acknowledgements.md).
+
 ## License
 
 [MIT](LICENSE)

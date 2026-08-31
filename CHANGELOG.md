@@ -46,4 +46,4 @@
 
 ## Prior history
 
-Versions **3.11.13 and earlier** shipped as **OpenCode for Copilot**. See that project's `CHANGELOG.md` for GLM → OpenCode → swarm/Ponytail history.
+Versions **3.11.13 and earlier** shipped as [**OpenCode for Copilot**](https://github.com/Abbalochdev/opencode-for-copilot). See that repository's `CHANGELOG.md` for GLM → OpenCode → swarm/Ponytail history.

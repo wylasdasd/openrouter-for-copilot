@@ -355,6 +355,10 @@ MCP 需要工具调用 **并且** 有识图工具。两者都没有、也没配�
 
 `src/` 目录、启动顺序、聊天请求路径见 [docs/code-structure.zh-cn.md](docs/code-structure.zh-cn.md)。重试、目录缓存、视觉内部实现见 [docs/architecture-optimizations.md](docs/architecture-optimizations.md)。
 
+## 致谢
+
+本项目参考并受益于 [GLM for Copilot](https://github.com/umbrella22/GLM-for-copilot) 与 [OpenCode for Copilot](https://github.com/Abbalochdev/opencode-for-copilot)。感谢与渊源见 [docs/acknowledgements.zh-cn.md](docs/acknowledgements.zh-cn.md)。
+
 ## 许可证
 
 [MIT](LICENSE)

@@ -2,7 +2,7 @@
 
 > OpenRouter for Copilot v3.11.14
 
-Fork of the OpenCode for Copilot lineage, retargeted to the [OpenRouter API](https://openrouter.ai/docs).
+Fork of the [OpenCode for Copilot](https://github.com/Abbalochdev/opencode-for-copilot) lineage, retargeted to the [OpenRouter API](https://openrouter.ai/docs).
 
 ---
 
@@ -79,7 +79,9 @@ First activation copies the first non-empty legacy secret into `openrouter-for-c
 ## Lineage
 
 1. [GLM for VS Code Copilot](https://github.com/umbrella22/glm-for-copilot)
-2. OpenCode for Copilot
+2. [OpenCode for Copilot](https://github.com/Abbalochdev/opencode-for-copilot)
 3. **OpenRouter for Copilot** (this repo)
+
+Thanks and what was borrowed: [acknowledgements.md](acknowledgements.md).
 
 Pre-3.11.14 changelog: that project's `CHANGELOG.md`.
