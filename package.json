@@ -3,7 +3,7 @@
   "displayName": "%openrouter-for-copilot.displayName%",
   "description": "Use 400+ OpenRouter models (Claude, GPT, Gemini, DeepSeek, Llama, free tiers) in the Copilot Chat model picker. Vision proxy, thinking mode, agent swarm — BYOK.",
   "icon": "resources/icon.png",
-  "version": "3.11.18",
+  "version": "3.11.19",
   "packageManager": "pnpm@11.7.0",
   "publisher": "wylasdasd",
   "license": "MIT",
