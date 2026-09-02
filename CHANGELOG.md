@@ -1,8 +1,10 @@
 ## [Unreleased]
 
-### Features
+## [3.11.19](https://github.com/wylasdasd/openrouter-for-copilot/compare/v3.11.18...v3.11.19) (2026-09-01)
 
-* **Vision** — align image routing with [GLM for Copilot](https://github.com/umbrella22/GLM-for-copilot): `native` (resize + 2.5 MiB budget) when the catalog model accepts images, `proxy` for text-only models (OCR-first untrusted description), and optional `mcp` (store locally for an image-capable MCP tool). Setting `visionMode` can force one mode for all models. README documents how to switch modes, configure the proxy panel, and use MCP.
+### Fixes
+
+* **Vision** — picker advertises `imageInput: true` to Copilot Chat (GLM-5.3 pattern) so text models still receive attachments; catalog `imageInput` only chooses native vs proxy.
 
 ## [3.11.18](https://github.com/wylasdasd/openrouter-for-copilot/compare/v3.11.17...v3.11.18) (2026-08-28)
 

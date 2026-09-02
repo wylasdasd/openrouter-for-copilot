@@ -110,6 +110,12 @@ describe('OpenRouter catalog pipeline', () => {
 		);
 	});
 
+	it('advertises imageInput to Copilot even when the catalog model is text-only', () => {
+		const deepseek = MODELS.find((m) => m.id === 'deepseek/deepseek-chat');
+		expect(deepseek?.capabilities.imageInput).toBe(false);
+		expect(toChatInfo(deepseek!, true).capabilities.imageInput).toBe(true);
+	});
+
 	it('falls back to the static list when the catalog is unreachable', async () => {
 		const realFetch = globalThis.fetch;
 		globalThis.fetch = (async () => {
@@ -256,7 +262,7 @@ describe('model metadata helpers', () => {
 		expect(info.statusIcon).toBeUndefined();
 		expect(info.capabilities).toEqual({
 			toolCalling: MODELS[0].capabilities.toolCalling,
-			imageInput: MODELS[0].capabilities.imageInput,
+			imageInput: true,
 		});
 		expect(info.configurationSchema).toBeUndefined();
 		expect(info.inputCost).toBe(0.14);
@@ -287,11 +293,11 @@ describe('model metadata helpers', () => {
 			tooltip: 'Custom OpenAI-compatible model',
 			capabilities: {
 				toolCalling: true,
-				imageInput: false,
+				imageInput: true,
 			},
 		});
 		expect(custom?.configurationSchema?.properties.reasoningEffort.default).toBe('max');
-		expect(noThinking?.capabilities.imageInput).toBe(false);
+		expect(noThinking?.capabilities.imageInput).toBe(true);
 		expect(noThinking?.configurationSchema).toBeUndefined();
 	});
 });

@@ -69,7 +69,9 @@ export function toChatInfo(
 		isUserSelectable: isUserSelectableModel(m.id) && !deprecated,
 		capabilities: {
 			toolCalling: m.capabilities.toolCalling,
-			imageInput: m.capabilities.imageInput,
+			// Copilot Chat drops image parts unless this is true. Catalog
+			// `imageInput` still drives native vs proxy (`getModelVisionMode`).
+			imageInput: true,
 		},
 		...toModelCostInfo(m, pricingCurrency),
 		...(m.capabilities.thinking ? { configurationSchema: buildThinkingEffortSchema() } : {}),

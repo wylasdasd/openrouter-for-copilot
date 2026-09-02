@@ -55,6 +55,8 @@ Image routing matches [GLM for Copilot](https://github.com/umbrella22/GLM-for-co
 2. **proxy** — otherwise describe with OpenRouter `google/gemini-2.0-flash-001`, then a VS Code/Copilot vision model. OCR-first prompt; description wrapped as untrusted image content. Proxy source is configured by **OpenRouter: Configure Vision Proxy** (`vision/ui/`).
 3. **mcp** — optional global override: store files under globalStorage (`vision/image-store.ts`) and leave a local-path prompt. Requires an image-capable MCP tool (schema or `mcp.imageCapableTools`). If none is available, fall back to proxy when configured; otherwise error.
 
+Picker rows always advertise `capabilities.imageInput: true` to Copilot Chat so text models still receive image parts (GLM-5.3 pattern). Catalog `imageInput` only chooses native vs proxy.
+
 `openrouter-for-copilot.visionMode` of `native` / `proxy` / `mcp` forces that mode for every picker model. Custom slugs default to `imageInput: false`. See README **Attach images** for usage.
 
 ---

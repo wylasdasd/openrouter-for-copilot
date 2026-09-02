@@ -138,6 +138,8 @@ pnpm compile
 | 独立面板 | **OpenRouter: 配置视觉代理** | **proxy** 时用哪台模型去**描述**图片 |
 | `settings.json` | `visionPrompt`、`imageHandlingPrompt`、`imageStoredPrompt` | 实际 prompt 文本（视觉代理面板里没有这项） |
 
+选择器里每台模型都会向 Copilot 声明 `imageInput: true`（与 [GLM for Copilot](https://github.com/umbrella22/GLM-for-copilot) 相同），这样附件才会交给扩展。目录里的纯文本模型仍然走 **proxy**，不会直接收像素。
+
 #### `visionMode` — 图片路由
 
 对选择器里所有 OpenRouter 模型生效。运行 **OpenRouter: 打开设置**，搜索 `visionMode`。

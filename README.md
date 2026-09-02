@@ -142,6 +142,8 @@ Two places to configure vision (they do different jobs):
 | Dedicated panel | **OpenRouter: Configure Vision Proxy** | Which model **describes** the image when proxy is used |
 | `settings.json` | `visionPrompt`, `imageHandlingPrompt`, `imageStoredPrompt` | The actual prompt text (not shown on the proxy panel) |
 
+Every picker model reports `imageInput: true` to Copilot Chat (same trick as [GLM for Copilot](https://github.com/umbrella22/GLM-for-copilot)) so attachments are forwarded. Text-only catalog models still **proxy**; they do not receive pixels.
+
 #### `visionMode` — image routing
 
 Applies to every OpenRouter model in the picker. **OpenRouter: Open Settings**, search `visionMode`.
